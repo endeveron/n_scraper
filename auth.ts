@@ -113,7 +113,6 @@ export const {
   logger: {
     error(error) {
       if (error?.name === 'CredentialsSignin') {
-        // Suppress this specific error
         return;
       }
 

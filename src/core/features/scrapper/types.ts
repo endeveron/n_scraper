@@ -36,6 +36,8 @@ export interface OutageSchedule extends OutageScheduleBase {
   // Schedule data
   today: string[];
   tomorrow: string[];
+  todayDate: string;
+  tomorrowDate: string;
 }
 
 export interface OutageScheduleParams {

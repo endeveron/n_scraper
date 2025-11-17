@@ -1,6 +1,7 @@
 'use server';
 
-import { chromium } from 'playwright';
+import chromium from '@sparticuz/chromium';
+import { chromium as chromiumCore, type Browser } from 'playwright-core';
 
 import { BUILDING, DTEK_WEBPAGE_URL, STREET } from '@/core/constants';
 import {
@@ -16,6 +17,8 @@ import {
   LAST_UPDATE_SELECTOR,
   MODAL_CLOSE_BTN_SELECTOR,
   MODAL_HIDDEN_SELECTOR,
+  NO_DATA,
+  NO_OUTAGES,
   QUEUE_NUMBER_SELECTOR,
   STREET_AUTOCOMPLETE_ITEM_SELECTOR,
   STREET_AUTOCOMPLETE_LIST_SELECTOR,
@@ -59,7 +62,7 @@ export const testFormFilling = async ({
 
   try {
     // Launch browser
-    browser = await chromium.launch({ headless: true });
+    browser = await launchBrowser();
     const page = await browser.newPage();
 
     // Navigate to DTEK page
@@ -153,6 +156,11 @@ export const testFormFilling = async ({
       },
     };
   } catch (err: unknown) {
+    console.log(
+      'Full error object:',
+      JSON.stringify(err, Object.getOwnPropertyNames(err))
+    );
+
     if (browser) {
       await browser.close();
     }
@@ -180,7 +188,7 @@ export const getOutageScheduleAPI = async ({
   let browser;
 
   try {
-    browser = await chromium.launch({ headless: true });
+    browser = await launchBrowser();
     const page = await browser.newPage();
 
     await page.goto(DTEK_WEBPAGE_URL, {
@@ -204,31 +212,44 @@ export const getOutageScheduleAPI = async ({
     // Fill form
     const form = page.locator(FORM_SELECTOR);
 
+    // STEP 1: Fill street field (scoped to the correct form)
     await form.locator(STREET_INPUT_SELECTOR).fill(street);
+
+    // Add small delay to allow autocomplete to trigger
+    await page.waitForTimeout(300);
+
+    // STEP 2: Wait for autocomplete dropdown
     await page.locator(STREET_AUTOCOMPLETE_LIST_SELECTOR).waitFor({
       state: 'visible',
-      timeout: 5000,
+      timeout: 15000, // Give more time in production
     });
+
+    // STEP 3: Click the matching item
     await page
       .locator(STREET_AUTOCOMPLETE_ITEM_SELECTOR)
       .filter({ hasText: street })
       .first()
       .click();
 
+    // STEP 4: Wait for house_num to be enabled
     await page.waitForFunction(
       (selector) => {
         const input = document.querySelector(selector) as HTMLInputElement;
         return input && !input.disabled;
       },
       HOUSE_NUM_INPUT_SELECTOR,
-      { timeout: 5000 }
+      { timeout: 15000 }
     );
 
+    // STEP 5: Fill house number field
     await page.locator(HOUSE_NUM_INPUT_SELECTOR).fill(houseNumber);
+
+    // STEP 6: Wait for house autocomplete and click
     await page.locator(HOUSE_NUM_AUTOCOMPLETE_LIST_SELECTOR).waitFor({
       state: 'visible',
       timeout: 5000,
     });
+
     await page
       .locator(HOUSE_NUM_AUTOCOMPLETE_ITEM_SELECTOR)
       .filter({ hasText: houseNumber })
@@ -328,6 +349,11 @@ export const getOutageScheduleAPI = async ({
       },
     };
   } catch (err: unknown) {
+    console.log(
+      'getOutageScheduleAPI Error:',
+      JSON.stringify(err, Object.getOwnPropertyNames(err))
+    );
+
     if (browser) {
       await browser.close();
     }
@@ -363,10 +389,31 @@ export const getOutageSchedule = async (): Promise<
       queueNumber: d.queueNumber,
       lastUpdate: d.lastUpdate,
       today: convertDay(d.today.hours),
+      todayDate: d.today.date,
       tomorrow: convertDay(d.tomorrow.hours),
+      tomorrowDate: d.tomorrow.date,
     },
   };
 };
+
+// Helper: Launch browser based on environment
+async function launchBrowser(): Promise<Browser> {
+  if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+    // Production: Use v138 (confirmed available)
+    const executablePath = await chromium.executablePath(
+      'https://github.com/Sparticuz/chromium/releases/download/v138.0.2/chromium-v138.0.2-pack.x64.tar'
+    );
+
+    return await chromiumCore.launch({
+      args: chromium.args,
+      executablePath,
+      headless: true,
+    });
+  } else {
+    const playwright = await import('playwright');
+    return await playwright.chromium.launch({ headless: true });
+  }
+}
 
 // Helper: Get time slot label
 function getTimeSlot(index: number): string {
@@ -471,12 +518,12 @@ function convertDay(hours: HourStatus[]): string[] {
 
   // If entire day = ON
   if (ranges.length === 1 && ranges[0] === '00:00 - 24:00') {
-    return ['Немає відключень'];
+    return [NO_OUTAGES];
   }
 
   // If no ON slots at all
   if (ranges.length === 0) {
-    return ['Дані відсутні'];
+    return [NO_DATA];
   }
 
   return ranges;

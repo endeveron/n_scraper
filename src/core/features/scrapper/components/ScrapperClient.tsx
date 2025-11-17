@@ -21,6 +21,7 @@ const ScrapperClient = () => {
 
     if (!res.success) {
       toast(res.error.message ?? 'Помилка при отриманні даних');
+      setLoading(false);
       return;
     }
 
@@ -62,12 +63,12 @@ const ScrapperClient = () => {
       {data ? (
         <div
           className={cn(
-            'fade flex-center flex-col max-w-lg m-auto trans-o',
+            'fade flex-center flex-col max-w-lg m-auto trans-a',
             loading && 'opacity-20'
           )}
         >
-          <div className="flex-center flex-col gap-1 w-full my-2 p-6 card bg-card/60 cursor-default">
-            <div className="flex gap-2 text-lg font-black">
+          <div className="flex-center flex-col gap-1 w-full my-4 cursor-default">
+            <div className="flex gap-3 text-lg font-black">
               <span>{data.street}</span>
               <span>{data.houseNumber}</span>
             </div>
@@ -78,21 +79,17 @@ const ScrapperClient = () => {
           </div>
 
           <TimeDisplay
-            title="Сьогодні"
+            title={data.todayDate}
             data={data.today}
             className="text-accent"
           />
-          <TimeDisplay
-            title="Завтра"
-            data={data.tomorrow}
-            className="opacity-60"
-          />
+          <TimeDisplay title={data.tomorrowDate} data={data.tomorrow} />
         </div>
-      ) : (
+      ) : loading ? (
         <div className="flex-center">
           <Loading />
         </div>
-      )}
+      ) : null}
     </div>
   );
 };
