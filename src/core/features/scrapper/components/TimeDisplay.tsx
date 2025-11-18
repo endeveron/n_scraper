@@ -1,6 +1,5 @@
 'use client';
 
-import { NO_OUTAGES } from '@/core/features/scrapper/constants';
 import { cn } from '@/core/utils';
 
 interface TimeDisplayProps {
@@ -11,12 +10,12 @@ interface TimeDisplayProps {
 
 const TimeDisplay = ({ data, title, className }: TimeDisplayProps) => {
   if (!data.length) return null;
-  if (data.length === 1 && data[0] === NO_OUTAGES) return null;
+  if ((data.length === 1 && data[0] === '0') || data[0] === '1') return null;
 
   return (
     <>
       {title ? (
-        <div className="fade my-4 text-lg font-black tracking-wider bg-card/40 px-6 py-2 rounded-full cursor-default trans-a">
+        <div className="fade my-4 font-extrabold tracking-wider bg-card/40 px-6 py-2 rounded-full cursor-default trans-a">
           {title}
         </div>
       ) : null}

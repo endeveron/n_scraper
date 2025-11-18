@@ -22,6 +22,5 @@ export const DATE_SPAN_SELECTOR = 'span[rel="date"]';
 export const ACTIVE_TABLE_SELECTOR = '.discon-fact-table.active table tbody tr';
 export const TABLE_CELLS_SELECTOR = 'td:not([colspan])';
 
-// Text
-export const NO_OUTAGES = 'Немає відключень';
-export const NO_DATA = 'Дані відсутні';
+// Weekly schedule data selectors
+export const SCHEDULE_TABLE_SELECTOR = '#tableRenderElem table tbody tr';

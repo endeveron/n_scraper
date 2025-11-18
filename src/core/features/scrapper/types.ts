@@ -12,35 +12,43 @@ export interface HourStatus {
 export interface DaySchedule {
   date: string; // "17.11.25"
   dateLabel: string; // "на сьогодні" or "на завтра"
-  timestamp: number; // Unix timestamp from rel attribute (1763330400)
+  timestamp: number; // Unix timestamp from rel attribute
   hours: HourStatus[]; // 24 hours (00-01 to 23-24)
 }
 
-interface OutageScheduleBase {
-  // Address info
+interface BaseDataBase {
   street: string; // "вул. Зоологічна"
   houseNumber: string; // "12/15"
   queueNumber: string; // "1.2"
-
-  // Metadata
   lastUpdate: string; // "16.11.2025 19:57"
 }
 
-export interface OutageScheduleAPI extends OutageScheduleBase {
-  // Schedule data
+export interface BaseDataParams {
+  street: string;
+  houseNumber: string;
+}
+
+export interface BaseDataAPI extends BaseDataBase {
   today: DaySchedule;
   tomorrow: DaySchedule;
 }
 
-export interface OutageSchedule extends OutageScheduleBase {
-  // Schedule data
-  today: string[];
-  tomorrow: string[];
+export interface BaseData extends BaseDataBase {
+  today: string[]; // Array of 24 status strings ["on", "on", ...],
+  tomorrow: string[]; // Array of 24 status strings ["on", "off", ...],
   todayDate: string;
   tomorrowDate: string;
 }
 
-export interface OutageScheduleParams {
-  street: string;
-  houseNumber: string;
+export interface WeekDay {
+  dayName: string; // "Понеділок", "Вівторок", etc.
+  dayNameEn: string; // "Monday", "Tuesday", etc. (for convenience)
+  isToday: boolean; // Has .current-day class
+  isYesterday: boolean; // Has .yesterday-row class
+  hours: string[]; // 24 items: 'on' | 'off' | 'off-first-half' | 'off-second-half'
+}
+
+export interface WeekSchedule {
+  schedule: WeekDay[]; // 7 days (Monday-Sunday)
+  timestamp: number;
 }

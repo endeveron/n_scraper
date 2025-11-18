@@ -17,7 +17,7 @@ const NODEMAILER_PASSWORD = process.env.NODEMAILER_PASSWORD as string;
 
 const DTEK_WEBPAGE_URL = process.env.DTEK_WEBPAGE_URL as string;
 const STREET = process.env.STREET as string;
-const BUILDING = process.env.BUILDING as string;
+const HOUSE_NUM = process.env.HOUSE_NUM as string;
 
 const APP_NAME = 'Світло';
 const APP_DESCRIPTION = '';
@@ -41,7 +41,7 @@ export {
   NODEMAILER_PASSWORD,
   DTEK_WEBPAGE_URL,
   STREET,
-  BUILDING,
+  HOUSE_NUM,
   APP_NAME,
   APP_DESCRIPTION,
   SIGNIN_REDIRECT,

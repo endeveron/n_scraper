@@ -27,7 +27,7 @@
 
   --btn-secondary-foreground: hsl(var(--hue), 10%, 40%);
   --btn-secondary-background: white;
-  --btn-secondary-foreground-hover: black;
+  --btn-secondary-foreground-hover: hsl(var(--hue), 10%, 10%);
   --btn-secondary-background-hover: hsl(var(--accent-hue), 95%, 70%);
 
   --input: white;
@@ -69,8 +69,8 @@
 
   --btn-secondary-foreground: hsl(var(--hue), 10%, 60%);
   --btn-secondary-background: hsl(var(--hue), 10%, 10%);
-  --btn-secondary-foreground-hover: white;
-  --btn-secondary-background-hover: hsl(var(--accent-hue), 85%, 40%);
+  --btn-secondary-foreground-hover: hsl(var(--hue), 10%, 10%);
+  --btn-secondary-background-hover: hsl(var(--accent-hue), 85%, 75%);
 
   --input: hsl(var(--hue), 10%, 25%);
   --input-border: hsl(var(--hue), 10%, 25%);
