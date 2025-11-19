@@ -20,6 +20,7 @@ export async function closeModalIfPresent(
     const modalCloseButton = page.locator(MODAL_CLOSE_BTN_SELECTOR);
     await modalCloseButton.waitFor({ state: 'visible', timeout: 3000 });
     await modalCloseButton.click();
+    logWithTime('closeModalIfPresent: Close button click');
     await page.locator(MODAL_HIDDEN_SELECTOR).waitFor({
       state: 'attached',
       timeout: 3000,
@@ -27,6 +28,7 @@ export async function closeModalIfPresent(
     await page.waitForTimeout(500);
   } catch {
     // Modal not present
+    logWithTime('closeModalIfPresent: Modal not present');
   }
 }
 
@@ -40,12 +42,14 @@ export async function fillAddressForm(
 
   // Fill street field
   await form.locator(STREET_INPUT_SELECTOR).fill(street);
+  logWithTime('fillAddressForm: Street input filled');
 
   // Wait for autocomplete dropdown
   await page.locator(STREET_AUTOCOMPLETE_LIST_SELECTOR).waitFor({
     state: 'visible',
     timeout: 15000,
   });
+  logWithTime('fillAddressForm: Dropdown shown');
 
   // Click the matching item
   await page
@@ -53,6 +57,7 @@ export async function fillAddressForm(
     .filter({ hasText: street })
     .first()
     .click();
+  logWithTime('fillAddressForm: Click to matched street item');
 
   // Wait for house_num to be enabled
   await page.waitForFunction(
@@ -63,24 +68,29 @@ export async function fillAddressForm(
     HOUSE_NUM_INPUT_SELECTOR,
     { timeout: 15000 }
   );
+  logWithTime('fillAddressForm: House number input enabled');
 
   // Fill house number field
   await page.locator(HOUSE_NUM_INPUT_SELECTOR).fill(houseNumber);
+  logWithTime('fillAddressForm: House number input filled');
 
   // Wait for house autocomplete and click
   await page.locator(HOUSE_NUM_AUTOCOMPLETE_LIST_SELECTOR).waitFor({
     state: 'visible',
     timeout: 15000,
   });
+  logWithTime('fillAddressForm: House number autocomplete shown');
 
+  // Click the matching item
   await page
     .locator(HOUSE_NUM_AUTOCOMPLETE_ITEM_SELECTOR)
     .filter({ hasText: houseNumber })
     .first()
     .click();
+  logWithTime('fillAddressForm: Click to matched house num item');
 
   // Wait for results to load
-  await page.waitForTimeout(1000);
+  await page.waitForTimeout(1000); // TODO: try to decrease
 }
 
 // Get time slot label
@@ -209,4 +219,14 @@ export function mapDayNameToEnglish(ukrainianName: string): string {
     Неділя: 'Sunday',
   };
   return dayMap[ukrainianName] || ukrainianName;
+}
+
+export function logWithTime(msg: string): void {
+  const now = new Date();
+  const hours = now.getHours().toString().padStart(2, '0');
+  const minutes = now.getMinutes().toString().padStart(2, '0');
+  const seconds = now.getSeconds().toString().padStart(2, '0');
+  const millis = now.getMilliseconds().toString().padStart(3, '0');
+
+  console.log(`${msg} [${hours}:${minutes}:${seconds}.${millis}]`);
 }

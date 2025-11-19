@@ -64,10 +64,6 @@ async function closeBrowser(): Promise<void> {
   }
 }
 
-// async function getNewPage(): Promise<Page> {
-//   const browser = await getBrowser();
-//   return await browser.newPage();
-// }
 async function getNewPage(): Promise<PageWithBrowser> {
   const browser = await getBrowser();
   const page = (await browser.newPage()) as PageWithBrowser;

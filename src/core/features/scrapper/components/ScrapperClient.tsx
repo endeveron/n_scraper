@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import { RefreshIcon } from '@/core/components/icons/RefreshIcon';
@@ -20,6 +20,9 @@ const ScrapperClient = () => {
   const [schedule, setSchedule] = useState<WeekSchedule | null>(null);
   const [loadingSchedule, setLoadingSchedule] = useState(false);
 
+  // Prevent multiple calls
+  const fetchedRef = useRef(false);
+
   const retrieveBaseData = async () => {
     setLoading(true);
     const res = await getBaseData();
@@ -38,10 +41,11 @@ const ScrapperClient = () => {
 
   // Init base data on mount
   useEffect(() => {
-    if (data) return;
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
 
     (() => retrieveBaseData())();
-  }, [data]);
+  }, []);
 
   const retrieveSchedule = async () => {
     setLoadingSchedule(true);

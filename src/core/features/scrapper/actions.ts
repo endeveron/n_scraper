@@ -27,6 +27,7 @@ import {
   convertDay,
   fillAddressForm,
   getTimeSlot,
+  logWithTime,
   mapDayNameToEnglish,
   mapStatusClass,
 } from '@/core/features/scrapper/helpers';
@@ -34,6 +35,8 @@ import {
   PageWithBrowser,
   playwrightBrowser,
 } from '@/core/features/scrapper/lib/browser';
+
+const isLocalDev = !process.env.VERCEL && process.env.NODE_ENV !== 'production';
 
 export const getBaseDataAPI = async ({
   street,
@@ -46,20 +49,25 @@ export const getBaseDataAPI = async ({
     };
   }
 
+  logWithTime('getBaseDataAPI: Start');
+
   let page: PageWithBrowser | null = null;
 
   try {
-    // Use singleton to get a new page
     page = await playwrightBrowser.getNewPage();
 
     await page.goto(DTEK_WEBPAGE_URL, {
-      waitUntil: 'networkidle',
+      // waitUntil: 'networkidle',
+      waitUntil: 'domcontentloaded',
       timeout: 30000,
     });
+    logWithTime('getBaseDataAPI: URL opened');
 
-    // Use helper functions
     await closeModalIfPresent(page);
+    logWithTime('getBaseDataAPI: Modal closed');
+
     await fillAddressForm(page, street, houseNumber);
+    logWithTime('getBaseDataAPI: Address form filled');
 
     // Wait for schedule to load
     await page.locator(DISCON_FACT_SELECTOR).waitFor({
@@ -76,14 +84,16 @@ export const getBaseDataAPI = async ({
         queueNumber = queueText?.trim() || '';
       }
     } catch {
-      console.warn('getBaseDataAPI: Queue number not found');
+      // console.warn('getBaseDataAPI: Queue number not found');
+      logWithTime('getBaseDataAPI: Queue number not found');
     }
 
     // Extract last update
     const lastUpdateElement = await page.locator(LAST_UPDATE_SELECTOR);
     const lastUpdate = (await lastUpdateElement.textContent())?.trim() || '';
+    logWithTime('getBaseDataAPI: Last update data extracted');
 
-    // Extract TODAY's data
+    // Extract `today's` data
     const todayTab = page.locator(DATE_TAB_ACTIVE_SELECTOR);
     const todayDate =
       (await todayTab.locator(DATE_SPAN_SELECTOR).textContent())?.trim() || '';
@@ -102,12 +112,14 @@ export const getBaseDataAPI = async ({
         status: mapStatusClass(await cell.getAttribute('class')),
       }))
     );
+    logWithTime("getBaseDataAPI: Today's data extracted");
 
-    // Switch to TOMORROW tab
+    // Switch to `tomorrow` tab
     await page.locator(DATE_TAB_INACTIVE_SELECTOR).click();
     await page.waitForTimeout(500);
 
     const tomorrowTab = page.locator(DATE_TAB_ACTIVE_SELECTOR);
+    logWithTime('getBaseDataAPI: Switched to tomorrow tab');
     const tomorrowDate =
       (await tomorrowTab.locator(DATE_SPAN_SELECTOR).textContent())?.trim() ||
       '';
@@ -126,11 +138,14 @@ export const getBaseDataAPI = async ({
         status: mapStatusClass(await cell.getAttribute('class')),
       }))
     );
+    logWithTime("getBaseDataAPI: Tomorrow's data extracted");
 
-    // Close only the page, browser stays open
-    await page.close();
+    // Always close page
+    await page.close({ runBeforeUnload: false });
+    logWithTime('getBaseDataAPI: Page closed');
 
-    if (page._browser) {
+    // Close browser only in local dev
+    if (isLocalDev && page._browser) {
       await page._browser.close();
     }
 
@@ -156,17 +171,17 @@ export const getBaseDataAPI = async ({
       },
     };
   } catch (err: unknown) {
+    logWithTime('getBaseDataAPI: ERROR');
     console.log(
       'getBaseDataAPI Error:',
       JSON.stringify(err, Object.getOwnPropertyNames(err))
     );
 
     if (page) {
-      await page.close();
-
-      if (page._browser) {
-        await page._browser.close();
-      }
+      await page.close({ runBeforeUnload: false });
+    }
+    if (isLocalDev && page?._browser) {
+      await page._browser.close();
     }
 
     return {
@@ -191,26 +206,32 @@ export const getWeekScheduleAPI = async ({
     };
   }
 
+  logWithTime('getWeekScheduleAPI: Start');
+
   let page: PageWithBrowser | null = null;
 
   try {
-    // Use singleton to get a new page
     page = await playwrightBrowser.getNewPage();
 
     await page.goto(DTEK_WEBPAGE_URL, {
-      waitUntil: 'networkidle',
+      // waitUntil: 'networkidle',
+      waitUntil: 'domcontentloaded',
       timeout: 30000,
     });
+    logWithTime('getWeekScheduleAPI: URL opened');
 
-    // Use helper functions
     await closeModalIfPresent(page);
+    logWithTime('getWeekScheduleAPI: Modal closed');
+
     await fillAddressForm(page, street, houseNumber);
+    logWithTime('getWeekScheduleAPI: Address form filled');
 
     // Wait for weekly table to load
     await page.locator('#tableRenderElem').waitFor({
       state: 'visible',
       timeout: 15000,
     });
+    logWithTime('getWeekScheduleAPI: Table is visible');
 
     // Extract weekly schedule
     const rows = await page.locator(SCHEDULE_TABLE_SELECTOR).all();
@@ -248,10 +269,14 @@ export const getWeekScheduleAPI = async ({
       });
     }
 
-    // Close only the page, browser stays open
-    await page.close();
+    logWithTime('getWeekScheduleAPI: Table data extracted');
 
-    if (page._browser) {
+    // Always close page
+    await page.close({ runBeforeUnload: false });
+    logWithTime('getBaseDataAPI: Page closed');
+
+    // Close browser only in local dev
+    if (isLocalDev && page._browser) {
       await page._browser.close();
     }
 
@@ -260,17 +285,17 @@ export const getWeekScheduleAPI = async ({
       data: { schedule: days, timestamp: Date.now() },
     };
   } catch (err: unknown) {
+    logWithTime('getWeekScheduleAPI: ERROR');
     console.log(
       'getWeekScheduleAPI Error:',
       JSON.stringify(err, Object.getOwnPropertyNames(err))
     );
 
     if (page) {
-      await page.close();
-
-      if (page._browser) {
-        await page._browser.close();
-      }
+      await page.close({ runBeforeUnload: false });
+    }
+    if (isLocalDev && page?._browser) {
+      await page._browser.close();
     }
 
     return {
