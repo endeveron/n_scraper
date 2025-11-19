@@ -1,41 +1,50 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
+import { Button } from '@/core/components/ui/Button';
 import Loading from '@/core/components/ui/Loading';
 import Taskbar from '@/core/components/ui/Taskbar';
+import { useSessionClient } from '@/core/features/auth/hooks/useSessionClient';
 import { getData } from '@/core/features/scrapper/actions';
 import TimeDisplay from '@/core/features/scrapper/components/TimeDisplay';
 import WeeklySchedule from '@/core/features/scrapper/components/WeeklySchedule';
 import { CompoundData } from '@/core/features/scrapper/types';
 import { cn } from '@/core/utils';
-import { useSessionClient } from '@/core/features/auth/hooks/useSessionClient';
 
 const ScrapperClient = () => {
   const { status } = useSessionClient();
   const [data, setData] = useState<CompoundData | null>(null);
+  const [reloadAllowed, setReloadAllowed] = useState(false);
   const [loading, setLoading] = useState(false);
 
   // Prevent multiple calls
   const fetchedRef = useRef(false);
 
-  const retrieveData = async () => {
+  const retrieveData = useCallback(async () => {
     setLoading(true);
+
+    if (reloadAllowed) {
+      setReloadAllowed(false);
+    }
+
     const res = await getData();
 
     if (!res.success) {
-      toast('Помилка при отриманні даних');
-      console.error(res.error.message);
-      setLoading(false);
-      return;
-    }
-
-    if (res.data) {
+      toast('Помилка отримання даних');
+      if (res.error.message) {
+        console.error(res.error.message);
+      }
+      setReloadAllowed(true);
+    } else if (res.data) {
       setData(res.data);
     }
+
     setLoading(false);
-  };
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Init data on mount
   useEffect(() => {
@@ -43,7 +52,7 @@ const ScrapperClient = () => {
     fetchedRef.current = true;
 
     (() => retrieveData())();
-  }, [status]);
+  }, [retrieveData, status]);
 
   return (
     <div className="fade flex flex-col min-h-dvh px-4 pb-20">
@@ -52,17 +61,7 @@ const ScrapperClient = () => {
           <div className="text-2xl text-accent font-black cursor-default"></div>
         </div>
 
-        <Taskbar loading={loading}>
-          {/* {data ? (
-            <div
-              onClick={retrieveData}
-              className="ml-1 icon--action trans-c"
-              title="Refresh"
-            >
-              <RefreshIcon className={cn(loading && 'animate-spin')} />
-            </div>
-          ) : null} */}
-        </Taskbar>
+        <Taskbar loading={loading} />
       </div>
 
       {loading && !data ? (
@@ -74,11 +73,11 @@ const ScrapperClient = () => {
       {data ? (
         <div
           className={cn(
-            'fade flex-1 flex-center flex-col gap-8 w-80 m-auto md:flex-row md:gap-10 trans-o',
+            'fade flex-1 flex-center flex-col gap-8 w-80 m-auto md:flex-row md:gap-12 trans-o',
             loading && 'opacity-40'
           )}
         >
-          <div className="flex-center shrink-0 flex-col md:gap-1">
+          <div className="flex-center shrink-0 flex-col gap-2">
             <div className="mb-4 flex-center flex-col gap-2 w-full cursor-default">
               <div className="flex gap-3 text font-extrabold">
                 <span>{data.street}</span>
@@ -99,6 +98,12 @@ const ScrapperClient = () => {
           </div>
 
           <WeeklySchedule data={data.weekSchedule} />
+        </div>
+      ) : reloadAllowed ? (
+        <div className="fade my-8 flex-center">
+          <Button onClick={retrieveData} variant="outline">
+            Отримати дані
+          </Button>
         </div>
       ) : null}
     </div>

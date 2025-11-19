@@ -21,7 +21,7 @@ const TimeDisplay = ({ data, title, className }: TimeDisplayProps) => {
       ) : null}
       <div
         className={cn(
-          'fade card bg-card/80 w-full px-8 py-6 flex-center flex-col gap-4 text-3xl font-black tracking-wider cursor-default trans-a',
+          'fade w-75 card px-8 py-6 flex-center flex-col gap-4 text-2xl font-black tracking-wider bg-card/90 dark:bg-card/85 cursor-default trans-a',
           className
         )}
       >
