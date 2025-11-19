@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-import { RefreshIcon } from '@/core/components/icons/RefreshIcon';
 import Loading from '@/core/components/ui/Loading';
 import Taskbar from '@/core/components/ui/Taskbar';
 import { getData } from '@/core/features/scrapper/actions';
@@ -11,8 +10,10 @@ import TimeDisplay from '@/core/features/scrapper/components/TimeDisplay';
 import WeeklySchedule from '@/core/features/scrapper/components/WeeklySchedule';
 import { CompoundData } from '@/core/features/scrapper/types';
 import { cn } from '@/core/utils';
+import { useSessionClient } from '@/core/features/auth/hooks/useSessionClient';
 
 const ScrapperClient = () => {
+  const { status } = useSessionClient();
   const [data, setData] = useState<CompoundData | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -24,7 +25,8 @@ const ScrapperClient = () => {
     const res = await getData();
 
     if (!res.success) {
-      toast(res.error.message ?? 'Помилка при отриманні даних');
+      toast('Помилка при отриманні даних');
+      console.error(res.error.message);
       setLoading(false);
       return;
     }
@@ -37,11 +39,11 @@ const ScrapperClient = () => {
 
   // Init data on mount
   useEffect(() => {
-    if (fetchedRef.current) return;
+    if (fetchedRef.current || status !== 'authenticated') return;
     fetchedRef.current = true;
 
     (() => retrieveData())();
-  }, []);
+  }, [status]);
 
   return (
     <div className="fade flex flex-col min-h-dvh px-4 pb-20">
@@ -51,7 +53,7 @@ const ScrapperClient = () => {
         </div>
 
         <Taskbar loading={loading}>
-          {data ? (
+          {/* {data ? (
             <div
               onClick={retrieveData}
               className="ml-1 icon--action trans-c"
@@ -59,7 +61,7 @@ const ScrapperClient = () => {
             >
               <RefreshIcon className={cn(loading && 'animate-spin')} />
             </div>
-          ) : null}
+          ) : null} */}
         </Taskbar>
       </div>
 

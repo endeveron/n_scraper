@@ -9,8 +9,8 @@ import {
   STREET_AUTOCOMPLETE_LIST_SELECTOR,
   STREET_INPUT_SELECTOR,
 } from '@/core/features/scrapper/constants';
-import { HourStatus, PowerStatus } from '@/core/features/scrapper/types';
 import { PageWithBrowser } from '@/core/features/scrapper/lib/browser';
+import { HourStatus, PowerStatus } from '@/core/features/scrapper/types';
 
 // Close modal if present
 export async function closeModalIfPresent(
@@ -40,9 +40,7 @@ export async function fillAddressForm(
 ): Promise<void> {
   const form = page.locator(FORM_SELECTOR);
 
-  // // Fill street field
-  // await form.locator(STREET_INPUT_SELECTOR).fill(street);
-  // logWithTime('fillAddressForm: Street input filled');
+  // Fill street field
   const streetInput = form.locator(STREET_INPUT_SELECTOR);
   await streetInput.fill(street);
   await streetInput.dispatchEvent('input');
@@ -97,7 +95,7 @@ export async function fillAddressForm(
   logWithTime('fillAddressForm: Click to matched house num item');
 
   // Wait for results to load
-  await page.waitForTimeout(1000); // TODO: try to decrease
+  await page.waitForTimeout(1000);
 }
 
 // Get time slot label
@@ -236,4 +234,33 @@ export function logWithTime(msg: string): void {
   const millis = now.getMilliseconds().toString().padStart(3, '0');
 
   console.log(`${msg} [${hours}:${minutes}:${seconds}.${millis}]`);
+}
+
+export function prettyLogError(err: Error) {
+  const timestamp = new Date().toISOString();
+  const name = err.name || 'Error';
+  const message = err.message || '';
+  const stack = err.stack || '';
+  const callLog = message.includes('Call log:')
+    ? message.split('Call log:')[1]
+    : '';
+
+  console.log(`\n[${timestamp}] ${name}: ${message.split('\n')[0]}\n`);
+
+  if (callLog) {
+    const simplifiedLog = callLog
+      .replace(/(\d+ × retrying click action)/g, '  - $1')
+      .replace(/<div.*?>/g, '<div...>')
+      .split('\n')
+      .map((line: string) => line.trim())
+      .filter((line: string) => line)
+      .join('\n');
+
+    console.log('Call log summary:\n', simplifiedLog);
+  }
+
+  if (stack) {
+    const shortStack = stack.split('\n').slice(0, 5).join('\n');
+    console.log('\nStack trace (shortened):\n', shortStack, '...');
+  }
 }

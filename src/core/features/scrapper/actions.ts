@@ -27,6 +27,7 @@ import {
   logWithTime,
   mapDayNameToEnglish,
   mapStatusClass,
+  prettyLogError,
 } from '@/core/features/scrapper/helpers';
 import {
   PageWithBrowser,
@@ -165,7 +166,7 @@ export const getData = async (): Promise<ServerActionResult<CompoundData>> => {
     return {
       success: true,
       data: {
-        street: STREET,
+        street: `вул. ${STREET}`,
         houseNumber: HOUSE_NUM,
         queueNumber,
         lastUpdate,
@@ -181,10 +182,12 @@ export const getData = async (): Promise<ServerActionResult<CompoundData>> => {
     };
   } catch (err: unknown) {
     logWithTime('getData: ERROR');
-    console.log(
-      'getData Error:',
-      JSON.stringify(err, Object.getOwnPropertyNames(err))
-    );
+
+    if (err instanceof Error) {
+      prettyLogError(err);
+    } else {
+      console.error('Unknown error:', err);
+    }
 
     if (page) {
       await page.close({ runBeforeUnload: false });
