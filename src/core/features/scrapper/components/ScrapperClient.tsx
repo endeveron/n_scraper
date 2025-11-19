@@ -4,28 +4,24 @@ import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import { RefreshIcon } from '@/core/components/icons/RefreshIcon';
-import { Button } from '@/core/components/ui/Button';
 import Loading from '@/core/components/ui/Loading';
 import Taskbar from '@/core/components/ui/Taskbar';
-import { getBaseData, getWeekSchedule } from '@/core/features/scrapper/actions';
+import { getData } from '@/core/features/scrapper/actions';
 import TimeDisplay from '@/core/features/scrapper/components/TimeDisplay';
 import WeeklySchedule from '@/core/features/scrapper/components/WeeklySchedule';
-import { BaseData, WeekSchedule } from '@/core/features/scrapper/types';
+import { CompoundData } from '@/core/features/scrapper/types';
 import { cn } from '@/core/utils';
 
 const ScrapperClient = () => {
-  const [data, setData] = useState<BaseData | null>(null);
+  const [data, setData] = useState<CompoundData | null>(null);
   const [loading, setLoading] = useState(false);
-
-  const [schedule, setSchedule] = useState<WeekSchedule | null>(null);
-  const [loadingSchedule, setLoadingSchedule] = useState(false);
 
   // Prevent multiple calls
   const fetchedRef = useRef(false);
 
-  const retrieveBaseData = async () => {
+  const retrieveData = async () => {
     setLoading(true);
-    const res = await getBaseData();
+    const res = await getData();
 
     if (!res.success) {
       toast(res.error.message ?? 'Помилка при отриманні даних');
@@ -39,27 +35,13 @@ const ScrapperClient = () => {
     setLoading(false);
   };
 
-  // Init base data on mount
+  // Init data on mount
   useEffect(() => {
     if (fetchedRef.current) return;
     fetchedRef.current = true;
 
-    (() => retrieveBaseData())();
+    (() => retrieveData())();
   }, []);
-
-  const retrieveSchedule = async () => {
-    setLoadingSchedule(true);
-    const res = await getWeekSchedule();
-    if (!res.success) {
-      toast(res.error.message ?? 'Помилка при отриманні даних');
-      setLoadingSchedule(false);
-      return;
-    }
-    if (res.data) {
-      setSchedule(res.data);
-    }
-    setLoadingSchedule(false);
-  };
 
   return (
     <div className="fade flex flex-col min-h-dvh px-4 pb-20">
@@ -71,25 +53,27 @@ const ScrapperClient = () => {
         <Taskbar loading={loading}>
           {data ? (
             <div
-              onClick={retrieveBaseData}
+              onClick={retrieveData}
               className="ml-1 icon--action trans-c"
               title="Refresh"
             >
-              <RefreshIcon />
+              <RefreshIcon className={cn(loading && 'animate-spin')} />
             </div>
           ) : null}
         </Taskbar>
       </div>
 
-      {loading ? (
+      {loading && !data ? (
         <div className="my-8 flex-center">
           <Loading />
         </div>
-      ) : data ? (
+      ) : null}
+
+      {data ? (
         <div
           className={cn(
             'fade flex-1 flex-center flex-col gap-8 w-80 m-auto md:flex-row md:gap-10 trans-o',
-            loading && 'opacity-20'
+            loading && 'opacity-40'
           )}
         >
           <div className="flex-center shrink-0 flex-col md:gap-1">
@@ -112,19 +96,7 @@ const ScrapperClient = () => {
             <TimeDisplay title={data.tomorrowDate} data={data.tomorrow} />
           </div>
 
-          {schedule ? (
-            <WeeklySchedule data={schedule} loading={loading} />
-          ) : (
-            <div className="flex-center md:shrink-0 md:w-[312px] md:h-150 md:bg-muted/5 md:rounded-2xl">
-              {loadingSchedule ? (
-                <Loading />
-              ) : (
-                <Button variant="outline" onClick={retrieveSchedule}>
-                  Графік на тиждень
-                </Button>
-              )}
-            </div>
-          )}
+          <WeeklySchedule data={data.weekSchedule} />
         </div>
       ) : null}
     </div>

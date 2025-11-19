@@ -68,10 +68,10 @@ async function getNewPage(): Promise<PageWithBrowser> {
   const browser = await getBrowser();
   const page = (await browser.newPage()) as PageWithBrowser;
 
-  // In serverless, attach the browser to the page for cleanup
-  if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
-    page._browser = browser;
-  }
+  // // In serverless, attach the browser to the page for cleanup
+  // if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+  //   page._browser = browser;
+  // }
 
   return page;
 }

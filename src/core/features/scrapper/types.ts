@@ -52,3 +52,7 @@ export interface WeekSchedule {
   schedule: WeekDay[]; // 7 days (Monday-Sunday)
   timestamp: number;
 }
+
+export interface CompoundData extends BaseData {
+  weekSchedule: WeekSchedule;
+}

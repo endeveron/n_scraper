@@ -13,11 +13,11 @@ const Taskbar = ({ children, loading }: TaskbarProps) => {
     <div
       className={cn(
         'flex shrink-0 items-center gap-4 mx-auto card bg-card/40 hover:bg-card rounded-full my-4 p-2 trans-o',
-        loading && 'opacity-40 pointer-events-none'
+        loading && 'opacity-100 pointer-events-none'
       )}
     >
       {children ?? null}
-      <MainMenu />
+      <MainMenu className={cn(loading && 'opacity-40 pointer-events-none')} />
     </div>
   );
 };

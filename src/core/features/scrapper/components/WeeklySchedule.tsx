@@ -13,11 +13,10 @@ interface PowerBlock {
 }
 
 interface WeeklyScheduleProps {
-  data: WeekSchedule;
-  loading?: boolean;
+  data?: WeekSchedule;
 }
 
-const WeeklySchedule = ({ data, loading }: WeeklyScheduleProps) => {
+const WeeklySchedule = ({ data }: WeeklyScheduleProps) => {
   const currentTime = useMemo(() => {
     const now = new Date();
     return now.getHours() + now.getMinutes() / 60;
@@ -35,56 +34,6 @@ const WeeklySchedule = ({ data, loading }: WeeklyScheduleProps) => {
     };
     return abbr[dayNameEn] || '';
   };
-
-  // const getPowerBlocks = (hours: string[]): PowerBlock[] => {
-  //   const blocks: PowerBlock[] = [];
-  //   let currentBlock: PowerBlock | null = null;
-
-  //   hours.forEach((status, hour) => {
-  //     const isOn = status !== 'off';
-
-  //     if (isOn) {
-  //       const startOffset = status === 'off-second-half' ? 0.5 : 0;
-  //       const endOffset = status === 'off-first-half' ? 0.5 : 1;
-
-  //       if (!currentBlock) {
-  //         currentBlock = {
-  //           startHour: hour,
-  //           endHour: hour,
-  //           startOffset,
-  //           endOffset,
-  //         };
-  //       } else {
-  //         const expectedStart = currentBlock.endHour + currentBlock.endOffset;
-  //         const actualStart = hour + startOffset;
-
-  //         if (Math.abs(expectedStart - actualStart) < 0.01) {
-  //           currentBlock.endHour = hour;
-  //           currentBlock.endOffset = endOffset;
-  //         } else {
-  //           blocks.push(currentBlock);
-  //           currentBlock = {
-  //             startHour: hour,
-  //             endHour: hour,
-  //             startOffset,
-  //             endOffset,
-  //           };
-  //         }
-  //       }
-  //     } else {
-  //       if (currentBlock) {
-  //         blocks.push(currentBlock);
-  //         currentBlock = null;
-  //       }
-  //     }
-  //   });
-
-  //   if (currentBlock) {
-  //     blocks.push(currentBlock);
-  //   }
-
-  //   return blocks;
-  // };
 
   const getPowerBlocks = (hours: string[]): PowerBlock[] => {
     const halfHours: number[] = [];
@@ -154,10 +103,10 @@ const WeeklySchedule = ({ data, loading }: WeeklyScheduleProps) => {
   const currentHour = Math.floor(currentTime);
   const cellHeight = 24;
 
+  if (!data) return null;
+
   return (
-    <div
-      className={cn('fade w-fit', loading && 'opacity-40 pointer-events-none')}
-    >
+    <div className="w-fit">
       {/* Header Row */}
       <div className="flex mb-0">
         <div className="w-8 shrink-0" />
