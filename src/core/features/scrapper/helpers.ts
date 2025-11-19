@@ -40,9 +40,13 @@ export async function fillAddressForm(
 ): Promise<void> {
   const form = page.locator(FORM_SELECTOR);
 
-  // Fill street field
-  await form.locator(STREET_INPUT_SELECTOR).fill(street);
-  logWithTime('fillAddressForm: Street input filled');
+  // // Fill street field
+  // await form.locator(STREET_INPUT_SELECTOR).fill(street);
+  // logWithTime('fillAddressForm: Street input filled');
+  const streetInput = form.locator(STREET_INPUT_SELECTOR);
+  await streetInput.fill(street);
+  await streetInput.dispatchEvent('input');
+  logWithTime('fillAddressForm: Street input visible');
 
   // Wait for autocomplete dropdown
   await page.locator(STREET_AUTOCOMPLETE_LIST_SELECTOR).waitFor({
@@ -71,7 +75,10 @@ export async function fillAddressForm(
   logWithTime('fillAddressForm: House number input enabled');
 
   // Fill house number field
-  await page.locator(HOUSE_NUM_INPUT_SELECTOR).fill(houseNumber);
+  // await page.locator(HOUSE_NUM_INPUT_SELECTOR).fill(houseNumber);
+  const houseNumInput = page.locator(HOUSE_NUM_INPUT_SELECTOR);
+  await houseNumInput.fill(houseNumber);
+  await houseNumInput.dispatchEvent('input');
   logWithTime('fillAddressForm: House number input filled');
 
   // Wait for house autocomplete and click
