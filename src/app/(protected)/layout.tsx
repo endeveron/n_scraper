@@ -1,3 +1,4 @@
+import { Session } from 'next-auth';
 import { redirect } from 'next/navigation';
 
 import { SIGNIN_REDIRECT } from '@/core/constants';
@@ -9,8 +10,17 @@ export default async function ProtectedLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
-  if (!session?.user) return redirect(SIGNIN_REDIRECT);
+  let session: Session | null = null;
+
+  try {
+    session = await auth();
+  } catch {
+    redirect(SIGNIN_REDIRECT);
+  }
+
+  if (!session?.user) {
+    redirect(SIGNIN_REDIRECT);
+  }
 
   return <ProtectedClient>{children}</ProtectedClient>;
 }

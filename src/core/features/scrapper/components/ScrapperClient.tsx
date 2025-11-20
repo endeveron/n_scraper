@@ -8,6 +8,7 @@ import Loading from '@/core/components/ui/Loading';
 import Taskbar from '@/core/components/ui/Taskbar';
 import { useSessionClient } from '@/core/features/auth/hooks/useSessionClient';
 import { getData } from '@/core/features/scrapper/actions';
+import AutoCounter from '@/core/features/scrapper/components/AutoCounter';
 import TimeDisplay from '@/core/features/scrapper/components/TimeDisplay';
 import WeeklySchedule from '@/core/features/scrapper/components/WeeklySchedule';
 import { CompoundData } from '@/core/features/scrapper/types';
@@ -24,13 +25,10 @@ const ScrapperClient = () => {
 
   const retrieveData = useCallback(async () => {
     setLoading(true);
-
     if (reloadAllowed) {
       setReloadAllowed(false);
     }
-
     const res = await getData();
-
     if (!res.success) {
       toast('Помилка отримання даних');
       if (res.error.message) {
@@ -40,7 +38,6 @@ const ScrapperClient = () => {
     } else if (res.data) {
       setData(res.data);
     }
-
     setLoading(false);
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -55,7 +52,7 @@ const ScrapperClient = () => {
   }, [retrieveData, status]);
 
   return (
-    <div className="fade flex flex-col min-h-dvh px-4 pb-20">
+    <div className="relative fade flex flex-col min-h-dvh px-4 pb-20">
       <div className="h-20 sticky top-0 flex items-center gap-4">
         <div className="flex flex-1 items-center gap-4">
           <div className="text-2xl text-accent font-black cursor-default"></div>
@@ -64,17 +61,22 @@ const ScrapperClient = () => {
         <Taskbar loading={loading} />
       </div>
 
-      {loading && !data ? (
-        <div className="my-8 flex-center">
+      <div
+        className={cn(
+          'absolute inset-0 -z-10 flex-center opacity-0 select-none trans-o',
+          loading && 'opacity-100 z-10'
+        )}
+      >
+        <div className="flex-center flex-col gap-6 -translate-y-8">
           <Loading />
+          <AutoCounter loading={loading} />
         </div>
-      ) : null}
+      </div>
 
       {data ? (
         <div
           className={cn(
-            'fade flex-1 flex-center flex-col gap-8 w-80 m-auto md:flex-row md:gap-12 trans-o',
-            loading && 'opacity-40'
+            'fade flex-1 flex-center flex-col gap-8 w-80 m-auto md:flex-row md:gap-12'
           )}
         >
           <div className="flex-center shrink-0 flex-col gap-2">
