@@ -1,5 +1,4 @@
-import { Browser, Page } from 'playwright-core';
-import { chromium as chromiumCore } from 'playwright-core';
+import { Browser, chromium as chromiumCore, Page } from 'playwright-core';
 import chromium from '@sparticuz/chromium';
 
 export interface PageWithBrowser extends Page {
@@ -68,10 +67,10 @@ async function getNewPage(): Promise<PageWithBrowser> {
   const browser = await getBrowser();
   const page = (await browser.newPage()) as PageWithBrowser;
 
-  // // In serverless, attach the browser to the page for cleanup
-  // if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
-  //   page._browser = browser;
-  // }
+  // In serverless, attach the browser to the page for cleanup
+  if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+    page._browser = browser;
+  }
 
   return page;
 }

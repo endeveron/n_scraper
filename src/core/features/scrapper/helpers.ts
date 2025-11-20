@@ -3,8 +3,6 @@ import {
   HOUSE_NUM_AUTOCOMPLETE_ITEM_SELECTOR,
   HOUSE_NUM_AUTOCOMPLETE_LIST_SELECTOR,
   HOUSE_NUM_INPUT_SELECTOR,
-  MODAL_CLOSE_BTN_SELECTOR,
-  MODAL_HIDDEN_SELECTOR,
   STREET_AUTOCOMPLETE_ITEM_SELECTOR,
   STREET_AUTOCOMPLETE_LIST_SELECTOR,
   STREET_INPUT_SELECTOR,
@@ -13,23 +11,56 @@ import { PageWithBrowser } from '@/core/features/scrapper/lib/browser';
 import { HourStatus, PowerStatus } from '@/core/features/scrapper/types';
 
 // Close modal if present
-export async function closeModalIfPresent(
-  page: PageWithBrowser
-): Promise<void> {
-  try {
-    const modalCloseButton = page.locator(MODAL_CLOSE_BTN_SELECTOR);
-    await modalCloseButton.waitFor({ state: 'visible', timeout: 3000 });
-    await modalCloseButton.click();
-    logWithTime('closeModalIfPresent: Close button click');
-    await page.locator(MODAL_HIDDEN_SELECTOR).waitFor({
-      state: 'attached',
-      timeout: 3000,
+// export async function closeModalIfPresent(
+//   page: PageWithBrowser
+// ): Promise<void> {
+//   try {
+//     const modalCloseButton = page.locator(MODAL_CLOSE_BTN_SELECTOR);
+//     await modalCloseButton.waitFor({ state: 'visible', timeout: 3000 });
+//     await modalCloseButton.click();
+//     logWithTime('closeModalIfPresent: Close button click');
+//     await page.locator(MODAL_HIDDEN_SELECTOR).waitFor({
+//       state: 'attached',
+//       timeout: 3000,
+//     });
+//     await page.waitForTimeout(500);
+//   } catch {
+//     // Modal not present
+//     logWithTime('closeModalIfPresent: Modal not present');
+//   }
+// }
+export async function nukeAllModals(page: PageWithBrowser) {
+  await page.evaluate(() => {
+    const selectors = [
+      '.modal',
+      '.modal.is-open',
+      '.micromodal-slide',
+      '.modal-questionnaire',
+      '.modal__overlay',
+      '.modal__overlay--opacity',
+      '[id^="modal-"]',
+    ];
+
+    // Remove all modal-like elements
+    selectors.forEach((sel) => {
+      document.querySelectorAll(sel).forEach((el) => el.remove());
     });
-    await page.waitForTimeout(500);
-  } catch {
-    // Modal not present
-    logWithTime('closeModalIfPresent: Modal not present');
-  }
+
+    // Remove any element with extremely high z-index (likely an overlay)
+    const all = document.querySelectorAll<HTMLElement>('*');
+    all.forEach((el) => {
+      const zIndex = window.getComputedStyle(el).zIndex;
+      const z = zIndex === 'auto' ? 0 : parseInt(zIndex, 10);
+
+      if (z > 1000) {
+        el.remove();
+      }
+    });
+
+    // Remove scroll locks
+    document.body.style.overflow = 'auto';
+    document.documentElement.style.overflow = 'auto';
+  });
 }
 
 // Fill address form (street + house number)
@@ -40,11 +71,22 @@ export async function fillAddressForm(
 ): Promise<void> {
   const form = page.locator(FORM_SELECTOR);
 
+  /** A modal__overlay (z-index 1001–10001) keeps appearing exactly during these actions:
+      - Before waiting for street autocomplete to appear
+      - Before clicking street autocomplete
+      - Before waiting for house number autocomplete
+      - Before clicking house number
+   */
+
   // Fill street field
   const streetInput = form.locator(STREET_INPUT_SELECTOR);
   await streetInput.fill(street);
   await streetInput.dispatchEvent('input');
   logWithTime('fillAddressForm: Street input visible');
+
+  // await logPossibleBlockers(page);
+  // Overlay is present
+  await nukeAllModals(page);
 
   // Wait for autocomplete dropdown
   await page.locator(STREET_AUTOCOMPLETE_LIST_SELECTOR).waitFor({
@@ -52,6 +94,10 @@ export async function fillAddressForm(
     timeout: 15000,
   });
   logWithTime('fillAddressForm: Dropdown shown');
+
+  // await logPossibleBlockers(page);
+  // Overlay is present and intercepts clicks
+  await nukeAllModals(page);
 
   // Click the matching item
   await page
@@ -79,12 +125,20 @@ export async function fillAddressForm(
   await houseNumInput.dispatchEvent('input');
   logWithTime('fillAddressForm: House number input filled');
 
+  // await logPossibleBlockers(page);
+  // Overlay is present
+  await nukeAllModals(page);
+
   // Wait for house autocomplete and click
   await page.locator(HOUSE_NUM_AUTOCOMPLETE_LIST_SELECTOR).waitFor({
     state: 'visible',
     timeout: 15000,
   });
   logWithTime('fillAddressForm: House number autocomplete shown');
+
+  // await logPossibleBlockers(page);
+  // Overlay is present and intercepts clicks
+  await nukeAllModals(page);
 
   // Click the matching item
   await page
@@ -262,5 +316,51 @@ export function prettyLogError(err: Error) {
   if (stack) {
     const shortStack = stack.split('\n').slice(0, 5).join('\n');
     console.log('\nStack trace (shortened):\n', shortStack, '...');
+  }
+}
+
+export async function logPossibleBlockers(page: PageWithBrowser) {
+  try {
+    console.log('[DEBUG] Checking for blockers...');
+
+    // 1. Check for ANY modal-like elements
+    const modalSelectors = [
+      '.modal.is-open',
+      '.modal-questionnaire',
+      '[id^="modal-"].is-open',
+      '.micromodal-slide.is-open',
+      '.modal__overlay',
+    ];
+
+    for (const sel of modalSelectors) {
+      const els = await page.locator(sel).all();
+      for (const el of els) {
+        if (await el.isVisible()) {
+          const box = await el.boundingBox();
+          const z = await el.evaluate((node) => getComputedStyle(node).zIndex);
+
+          console.log(`[DEBUG] Visible modal-like element: ${sel}`);
+          console.log(`[DEBUG] z-index: ${z}, box:`, box);
+        }
+      }
+    }
+
+    // 2. Log high z-index elements (potential overlays)
+    const blockers = page.locator('*');
+    const count = await blockers.count();
+    for (let i = 0; i < count; i++) {
+      const el = blockers.nth(i);
+      const z = await el.evaluate((el) => +getComputedStyle(el).zIndex || 0);
+
+      if (z > 1000) {
+        const box = await el.boundingBox();
+        console.log(`[DEBUG] High z-index element: ${z}`, { box });
+
+        const classes = await el.evaluate((el) => el.className);
+        console.log(`[DEBUG] Classes:`, classes);
+      }
+    }
+  } catch (err) {
+    console.log('[DEBUG] logPossibleBlockers failed:', err);
   }
 }

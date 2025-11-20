@@ -20,13 +20,13 @@ import {
 import { ServerActionResult } from '@/core/types';
 
 import {
-  closeModalIfPresent,
   convertDay,
   fillAddressForm,
   getTimeSlot,
   logWithTime,
   mapDayNameToEnglish,
   mapStatusClass,
+  nukeAllModals,
   prettyLogError,
 } from '@/core/features/scrapper/helpers';
 import {
@@ -48,7 +48,7 @@ export const getData = async (): Promise<ServerActionResult<CompoundData>> => {
     });
     logWithTime('getData: URL opened');
 
-    await closeModalIfPresent(page);
+    await nukeAllModals(page);
     logWithTime('getData: Modal closed');
 
     await fillAddressForm(page, STREET, HOUSE_NUM);
@@ -156,17 +156,18 @@ export const getData = async (): Promise<ServerActionResult<CompoundData>> => {
 
     logWithTime('getData: Week table data extracted');
 
-    // Always close page and browser
     await page.close({ runBeforeUnload: false });
-    if (page._browser) {
-      await page._browser.close();
-      logWithTime('getData: Browser closed');
-    }
+    logWithTime('getData: Page closed');
+
+    // if (page._browser) {
+    //   await page._browser.close();
+    //   logWithTime('getData: Browser closed');
+    // }
 
     return {
       success: true,
       data: {
-        street: `вул. ${STREET}`,
+        street: STREET,
         houseNumber: HOUSE_NUM,
         queueNumber,
         lastUpdate,
@@ -192,9 +193,9 @@ export const getData = async (): Promise<ServerActionResult<CompoundData>> => {
     if (page) {
       await page.close({ runBeforeUnload: false });
     }
-    if (page?._browser) {
-      await page._browser.close();
-    }
+    // if (page?._browser) {
+    //   await page._browser.close();
+    // }
 
     return {
       success: false,
