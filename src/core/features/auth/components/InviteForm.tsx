@@ -25,6 +25,13 @@ import {
   INVITE_CODE_TIME_KEY,
 } from '@/core/features/auth/constants';
 import { useLocalStorage } from '@/core/hooks/useLocalStorage';
+import {
+  ALREADY_HAVE_ACCOUNT,
+  CONTINUE_BUTTON_LABEL,
+  INVITE_CODE_INPUT_PLACEHOLDER,
+  INVITE_TOAST_WAIT_ONE_MINUTE,
+  INVITE_TOAST_WAIT_SECONDS,
+} from '@/core/translations/uk';
 import { cn } from '@/core/utils';
 
 const getCurrentTimestamp = () => Date.now();
@@ -53,7 +60,9 @@ const InviteForm = () => {
       if (storedTime) {
         const timeDiff = Math.ceil((60000 - (now - storedTime)) / 1000);
         if (timeDiff > 0) {
-          toast(`Please wait for ${timeDiff} seconds and try again`);
+          toast(
+            INVITE_TOAST_WAIT_SECONDS.replace('{seconds}', timeDiff.toString())
+          );
           return;
         } else {
           // Reset after 1 minute has passed
@@ -63,7 +72,7 @@ const InviteForm = () => {
       }
 
       if (counter > 2) {
-        toast('Please wait for 1 minute and try again');
+        toast(INVITE_TOAST_WAIT_ONE_MINUTE);
         setItem<number>(INVITE_CODE_TIME_KEY, now);
         return;
       }
@@ -103,7 +112,10 @@ const InviteForm = () => {
             render={({ field }) => (
               <FormItem>
                 <FormControl>
-                  <FormInput {...field} placeholder="Enter the code" />
+                  <FormInput
+                    {...field}
+                    placeholder={INVITE_CODE_INPUT_PLACEHOLDER}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -114,11 +126,11 @@ const InviteForm = () => {
             className="auth-form_button"
             type="submit"
           >
-            Continue
+            {CONTINUE_BUTTON_LABEL}
           </Button>
           <div className="auth-form_link">
             <Link href="/signin" scroll={false}>
-              Already have an account ?
+              {ALREADY_HAVE_ACCOUNT}
             </Link>
           </div>
         </form>

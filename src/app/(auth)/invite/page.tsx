@@ -1,19 +1,22 @@
 import { Metadata } from 'next';
 
 import { AnimatedCard, CardTitle } from '@/core/components/ui/Card';
-import { APP_NAME } from '@/core/constants';
 import InviteForm from '@/core/features/auth/components/InviteForm';
+import {
+  INVITE_CARD_TITLE,
+  INVITE_PAGE_DESCRIPTION,
+  INVITE_PAGE_TITLE,
+} from '@/core/translations/uk';
 
 export const metadata: Metadata = {
-  title: `Invite code – ${APP_NAME}`,
-  description: 'Account creation',
+  title: INVITE_PAGE_TITLE,
+  description: INVITE_PAGE_DESCRIPTION,
 };
 
 export default async function InviteCodePage() {
   return (
     <AnimatedCard>
-      {/* <CardLogo /> */}
-      <CardTitle className="text-accent">Invite code</CardTitle>
+      <CardTitle className="text-accent">{INVITE_CARD_TITLE}</CardTitle>
       <InviteForm />
     </AnimatedCard>
   );

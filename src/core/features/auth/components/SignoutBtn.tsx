@@ -4,6 +4,7 @@ import { useState } from 'react';
 
 import LoadingIcon from '@/core/components/ui/LoadingIcon';
 import { useSessionClient } from '@/core/features/auth/hooks/useSessionClient';
+import { SIGNOUT_BUTTON_LABEL } from '@/core/translations/uk';
 
 const SignOutButton = () => {
   const { status, isLoading, signOutSafely } = useSessionClient();
@@ -23,7 +24,7 @@ const SignOutButton = () => {
       {pending || isLoading ? (
         <LoadingIcon className="scale-75" />
       ) : (
-        <span className="cursor-pointer">Sign Out</span>
+        <span className="cursor-pointer">{SIGNOUT_BUTTON_LABEL}</span>
       )}
     </div>
   );

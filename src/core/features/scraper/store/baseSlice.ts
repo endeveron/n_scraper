@@ -1,17 +1,19 @@
 import { StateCreator } from 'zustand';
 
-import { getScrapedData } from '@/core/features/scrapper/actions';
-import { updateSchedule } from '@/core/features/scrapper/helpers';
-import { ScrapedData } from '@/core/features/scrapper/types';
+import { getScrapedData } from '@/core/features/scraper/actions';
+import { updateSchedule } from '@/core/features/scraper/helpers';
+import { ScrapedData } from '@/core/features/scraper/types';
 import { ServerActionResult } from '@/core/types';
-import { initialState } from '@/core/features/scrapper/store';
+import { initialState } from '@/core/features/scraper/store';
 
 export interface BaseSlice {
+  collapsed: boolean;
   scrapedData: ScrapedData | null;
   scraping: boolean;
   updatedAtTimestamp: number | null;
   updatedWithError: boolean;
   scrapeData: () => Promise<ServerActionResult<ScrapedData>>;
+  toggleCollapse: () => void;
 }
 
 export const baseSlice: StateCreator<BaseSlice, [], [], BaseSlice> = (
@@ -39,5 +41,9 @@ export const baseSlice: StateCreator<BaseSlice, [], [], BaseSlice> = (
 
     set({ scraping: false });
     return res;
+  },
+
+  toggleCollapse: () => {
+    set({ collapsed: !get().collapsed });
   },
 });

@@ -17,6 +17,12 @@ import {
 import { cn } from '@/core/utils';
 import { useSessionClient } from '@/core/features/auth/hooks/useSessionClient';
 import { useMemo } from 'react';
+import {
+  SIGN_OUT_LABEL,
+  THEME_LABEL_DARK,
+  THEME_LABEL_LIGHT,
+  THEME_LABEL_SUFFIX,
+} from '@/core/translations/uk';
 
 type MainMenuProps = {
   className?: string;
@@ -73,12 +79,14 @@ const MainMenu = ({ className }: MainMenuProps) => {
 
           <DropdownMenuItem onClick={handleToggleTheme}>
             {themeIcon}
-            {theme === 'light' ? 'Dark' : 'Light'} theme
+            {theme === 'light'
+              ? `${THEME_LABEL_DARK}${THEME_LABEL_SUFFIX}`
+              : `${THEME_LABEL_LIGHT}${THEME_LABEL_SUFFIX}`}
           </DropdownMenuItem>
 
           <DropdownMenuItem onClick={handleSignOut}>
             <SignOutIcon className="text-icon flip-x" />
-            Sign out
+            {SIGN_OUT_LABEL}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

@@ -24,3 +24,5 @@ export const TABLE_CELLS_SELECTOR = 'td:not([colspan])';
 
 // Weekly schedule data selectors
 export const SCHEDULE_TABLE_SELECTOR = '#tableRenderElem table tbody tr';
+
+export const UPDATE_INTERVAL = 12 * 60 * 60 * 1000; // 12 hours

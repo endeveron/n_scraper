@@ -1,19 +1,24 @@
 import { Metadata } from 'next';
 
-import { verifyUserId } from '@/core/features/auth/actions';
-import OnboardingForm from '@/core/features/auth/components/OnboardingForm';
 import {
   AnimatedCard,
   CardContent,
   CardDescription,
   CardTitle,
 } from '@/core/components/ui/Card';
+import { verifyUserId } from '@/core/features/auth/actions';
+import OnboardingForm from '@/core/features/auth/components/OnboardingForm';
+import {
+  ONBOARDING_CARD_DESCRIPTION,
+  ONBOARDING_CARD_TITLE,
+  ONBOARDING_PAGE_DESCRIPTION,
+  ONBOARDING_PAGE_TITLE,
+} from '@/core/translations/uk';
 import { SearchParams } from '@/core/types';
-import { APP_NAME } from '@/core/constants';
 
 export const metadata: Metadata = {
-  title: `Onboarding – ${APP_NAME}`,
-  description: 'Account creation',
+  title: ONBOARDING_PAGE_TITLE,
+  description: ONBOARDING_PAGE_DESCRIPTION,
 };
 
 export default async function OnboardingPage({
@@ -31,10 +36,12 @@ export default async function OnboardingPage({
 
   return (
     <AnimatedCard>
-      <CardTitle className="text-accent">Onboarding</CardTitle>
+      <CardTitle className="text-accent">{ONBOARDING_CARD_TITLE}</CardTitle>
+
       <CardDescription className="text-muted">
-        Email successfully verified
+        {ONBOARDING_CARD_DESCRIPTION}
       </CardDescription>
+
       <CardContent>
         <OnboardingForm userId={userId} />
       </CardContent>

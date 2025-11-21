@@ -5,15 +5,19 @@ import {
   CardContent,
   CardTitle,
 } from '@/core/components/ui/Card';
-import { APP_NAME } from '@/core/constants';
 import GenerateTokenButton from '@/core/features/auth/components/GenerateTokenButton';
+import { EMAIL_ERRORS } from '@/core/features/auth/constants';
+import {
+  ERROR_PAGE_DESCRIPTION,
+  ERROR_PAGE_TITLE,
+  ERROR_TITLE,
+} from '@/core/translations/uk';
 import { SearchParams } from '@/core/types';
 import { getErrorMessageFromSearchParams } from '@/core/utils/error';
-import { EMAIL_ERRORS } from '@/core/features/auth/constants';
 
 export const metadata: Metadata = {
-  title: `Email error – ${APP_NAME}`,
-  description: 'Email confirmation',
+  title: ERROR_PAGE_TITLE,
+  description: ERROR_PAGE_DESCRIPTION,
 };
 
 export default async function EmailErrorPage({
@@ -36,7 +40,7 @@ export default async function EmailErrorPage({
 
   return (
     <AnimatedCard>
-      <CardTitle className="text-error">Oops!</CardTitle>
+      <CardTitle className="text-error">{ERROR_TITLE}</CardTitle>
       <CardContent>
         <p className="-mt-2 text-center">{errorMessage}</p>
 

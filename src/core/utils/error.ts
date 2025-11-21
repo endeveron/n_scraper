@@ -1,3 +1,8 @@
+import {
+  INVALID_ERROR_CODE,
+  INVALID_SEARCH_PARAMS,
+  UNKNOWN_ERROR,
+} from '@/core/translations/uk';
 import { ErrorWithCode, ServerActionError } from '@/core/types';
 
 /**
@@ -19,7 +24,7 @@ export const handleActionError = (
     error && 'code' in error ? (error as ErrorWithCode).code : undefined;
   const info = error?.message;
   const message =
-    msg && info ? `${msg}. ${info}` : msg || info || 'Unknown error';
+    msg && info ? `${msg}. ${info}` : msg || info || UNKNOWN_ERROR;
 
   const serverActionError: ServerActionError = {
     success: false,
@@ -44,9 +49,9 @@ export const getErrorMessageFromSearchParams = (
   errCodeStr: string,
   errCodeMap: Map<number, string>
 ) => {
-  if (!errCodeStr) throw new Error('Invalid search params.');
+  if (!errCodeStr) throw new Error(INVALID_SEARCH_PARAMS);
   const errCodeNum = parseInt(errCodeStr);
   const isErrCodeExist = errCodeMap.has(errCodeNum);
-  if (!isErrCodeExist) throw new Error('Invalid error code.');
+  if (!isErrCodeExist) throw new Error(INVALID_ERROR_CODE);
   return errCodeMap.get(errCodeNum);
 };

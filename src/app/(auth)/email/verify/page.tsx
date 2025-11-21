@@ -7,6 +7,13 @@ import {
 } from '@/core/components/ui/Card';
 import { APP_NAME } from '@/core/constants';
 import GenerateTokenButton from '@/core/features/auth/components/GenerateTokenButton';
+import {
+  EMAIL_VERIFY_RESEND_BUTTON,
+  EMAIL_VERIFY_SENT_INTRO,
+  EMAIL_VERIFY_SENT_OUTRO,
+  EMAIL_VERIFY_SPAM_WARNING,
+  EMAIL_VERIFY_TITLE,
+} from '@/core/translations/uk';
 import { SearchParams } from '@/core/types';
 
 export const metadata: Metadata = {
@@ -28,20 +35,23 @@ export default async function VerifyEmailPage({
 
   return (
     <AnimatedCard>
-      <CardTitle className="text-accent">Check your inbox</CardTitle>
+      <CardTitle className="text-accent">{EMAIL_VERIFY_TITLE}</CardTitle>
+
       <CardContent>
         <p className="text-center px-4">
-          We&apos;ve sent a link to{' '}
-          <strong className="text-accent">{email}</strong> Please follow the
-          instructions to complete your registration.
+          {EMAIL_VERIFY_SENT_INTRO}{' '}
+          <strong className="text-accent">{email}</strong>.{' '}
+          {EMAIL_VERIFY_SENT_OUTRO}
         </p>
+
         <p className="my-4 text-center text-sm text-muted">
-          Don&apos;t see an email? Check spam folder.
+          {EMAIL_VERIFY_SPAM_WARNING}
         </p>
+
         <div className="flex-center">
           <GenerateTokenButton
             email={email}
-            btnTitle="Resend verification link"
+            btnTitle={EMAIL_VERIFY_RESEND_BUTTON}
             variant="outline"
           />
         </div>

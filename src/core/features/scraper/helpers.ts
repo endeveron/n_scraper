@@ -6,14 +6,15 @@ import {
   STREET_AUTOCOMPLETE_ITEM_SELECTOR,
   STREET_AUTOCOMPLETE_LIST_SELECTOR,
   STREET_INPUT_SELECTOR,
-} from '@/core/features/scrapper/constants';
-import { PageWithBrowser } from '@/core/features/scrapper/lib/browser';
+  UPDATE_INTERVAL,
+} from '@/core/features/scraper/constants';
+import { PageWithBrowser } from '@/core/features/scraper/lib/browser';
 import {
   HourStatus,
   PowerStatus,
   ScrapedData,
   WeekDay,
-} from '@/core/features/scrapper/types';
+} from '@/core/features/scraper/types';
 
 export function shouldRefetch({
   scrapedData,
@@ -34,12 +35,15 @@ export function shouldRefetch({
   endMinute?: number;
   staleMinutes?: number;
 }) {
-  // 0. If no data → always fetch immediately (regardless of time)
+  // If no data, always fetch immediately (regardless of time window)
   if (!scrapedData) return true;
 
   const lastUpdated = updatedAtTimestamp ?? 0;
 
-  // 1. Check if current time is inside allowed window
+  // If data is older than UPDATE_INTERVAL, always refetch (regardless of time window)
+  if (Date.now() - lastUpdated > UPDATE_INTERVAL) return true;
+
+  // Check if current time is inside allowed window
   const hour = now.getHours();
   const minute = now.getMinutes();
   const currentMinutes = hour * 60 + minute;
@@ -51,7 +55,7 @@ export function shouldRefetch({
 
   if (!isInTimeRange) return false;
 
-  // 2. Check stale interval
+  // Check stale interval
   const STALE_MS = staleMinutes * 60 * 1000;
   const isStale = Date.now() - lastUpdated > STALE_MS;
 

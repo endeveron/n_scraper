@@ -13,7 +13,10 @@ export default function AutoCounter({ loading, delay = 0 }: AutoCounterProps) {
   const [show, setShow] = useState(delay === 0);
 
   useEffect(() => {
-    if (!loading) return;
+    if (!loading) {
+      (() => setCount(1))();
+      return;
+    }
 
     const interval = setInterval(() => {
       setCount((c) => c + 1);

@@ -18,6 +18,10 @@ import FormLoading from '@/core/components/ui/FormLoading';
 import { signUp } from '@/core/features/auth/actions';
 import { SignUpSchema, signUpSchema } from '@/core/features/auth/schemas';
 import { useError } from '@/core/hooks/useError';
+import {
+  CONTINUE_BUTTON_LABEL,
+  EMAIL_INPUT_PLACEHOLDER,
+} from '@/core/translations/uk';
 import { cn } from '@/core/utils';
 
 const SignUpForm = () => {
@@ -63,7 +67,7 @@ const SignUpForm = () => {
             render={({ field }) => (
               <FormItem>
                 <FormControl>
-                  <FormInput {...field} placeholder="Enter your email" />
+                  <FormInput {...field} placeholder={EMAIL_INPUT_PLACEHOLDER} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -74,13 +78,8 @@ const SignUpForm = () => {
             className="auth-form_button"
             type="submit"
           >
-            Continue
+            {CONTINUE_BUTTON_LABEL}
           </Button>
-          {/* <div className="auth-form_link">
-            <Link href="/signin" scroll={false}>
-              Already have an account ?
-            </Link>
-          </div> */}
         </form>
         <FormLoading loadigIconClassName="-mt-14" isPending={isPending} />
       </div>

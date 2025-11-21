@@ -24,6 +24,12 @@ import VisibilityToggle from '@/core/features/auth/components/VisibilityToggle';
 import { SignInSchema, signInSchema } from '@/core/features/auth/schemas';
 import { SignInArgs } from '@/core/features/auth/types';
 import { useError } from '@/core/hooks/useError';
+import {
+  CREATE_ACCOUNT_LINK_LABEL,
+  EMAIL_INPUT_LABEL,
+  PASSWORD_INPUT_LABEL,
+  SIGNIN_BUTTON_LABEL,
+} from '@/core/translations/uk';
 import { cn } from '@/core/utils';
 
 const SignInForm = () => {
@@ -78,7 +84,7 @@ const SignInForm = () => {
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email</FormLabel>
+                <FormLabel>{EMAIL_INPUT_LABEL}</FormLabel>
                 <FormControl>
                   <FormInput {...field} />
                 </FormControl>
@@ -91,7 +97,7 @@ const SignInForm = () => {
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Password</FormLabel>
+                <FormLabel>{PASSWORD_INPUT_LABEL}</FormLabel>
                 <FormControlWithIcon>
                   <FormControlIcon>
                     <VisibilityToggle
@@ -112,10 +118,10 @@ const SignInForm = () => {
             className="auth-form_button"
             type="submit"
           >
-            Sign in
+            {SIGNIN_BUTTON_LABEL}
           </Button>
           <Link href="/invite" scroll={false} className="auth-form_link">
-            Create an account
+            {CREATE_ACCOUNT_LINK_LABEL}
           </Link>
         </form>
         <FormLoading loadigIconClassName="-mt-14" isPending={isPending} />

@@ -11,12 +11,12 @@ import {
   QUEUE_NUMBER_SELECTOR,
   SCHEDULE_TABLE_SELECTOR,
   TABLE_CELLS_SELECTOR,
-} from '@/core/features/scrapper/constants';
+} from '@/core/features/scraper/constants';
 import {
   ScrapedData,
   HourStatus,
   WeekDay,
-} from '@/core/features/scrapper/types';
+} from '@/core/features/scraper/types';
 import { ServerActionResult } from '@/core/types';
 
 import {
@@ -28,11 +28,11 @@ import {
   mapStatusClass,
   nukeAllModals,
   prettyLogError,
-} from '@/core/features/scrapper/helpers';
+} from '@/core/features/scraper/helpers';
 import {
   PageWithBrowser,
   playwrightBrowser,
-} from '@/core/features/scrapper/lib/browser';
+} from '@/core/features/scraper/lib/browser';
 
 export const getScrapedData = async (): Promise<
   ServerActionResult<ScrapedData>

@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 
-import { WeekSchedule } from '@/core/features/scrapper/types';
+import { WeekSchedule } from '@/core/features/scraper/types';
+import { WEEKDAYS } from '@/core/translations/uk';
 import { cn } from '@/core/utils';
 
 const CURRENT_TIME_UPDATE_INTERVAL = 10 * 60 * 1000; // 10 min
@@ -42,14 +43,15 @@ const WeeklySchedule = ({ data }: WeeklyScheduleProps) => {
 
   const getDayAbbreviation = (dayNameEn: string): string => {
     const abbr: Record<string, string> = {
-      Monday: 'ПН',
-      Tuesday: 'ВТ',
-      Wednesday: 'СР',
-      Thursday: 'ЧТ',
-      Friday: 'ПТ',
-      Saturday: 'СБ',
-      Sunday: 'НД',
+      Monday: WEEKDAYS.MONDAY,
+      Tuesday: WEEKDAYS.TUESDAY,
+      Wednesday: WEEKDAYS.WEDNESDAY,
+      Thursday: WEEKDAYS.THURSDAY,
+      Friday: WEEKDAYS.FRIDAY,
+      Saturday: WEEKDAYS.SATURDAY,
+      Sunday: WEEKDAYS.SUNDAY,
     };
+
     return abbr[dayNameEn] || '';
   };
 

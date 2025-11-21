@@ -1,19 +1,22 @@
 import { Metadata } from 'next';
 
 import { AnimatedCard, CardTitle } from '@/core/components/ui/Card';
-import { APP_NAME } from '@/core/constants';
 import SignInForm from '@/core/features/auth/components/SigninForm';
+import {
+  SIGNIN_CARD_TITLE,
+  SIGNIN_PAGE_DESCRIPTION,
+  SIGNIN_PAGE_TITLE,
+} from '@/core/translations/uk';
 
 export const metadata: Metadata = {
-  title: `Sign In – ${APP_NAME}`,
-  description: 'Authentication',
+  title: SIGNIN_PAGE_TITLE,
+  description: SIGNIN_PAGE_DESCRIPTION,
 };
 
 export default async function SigninPage() {
   return (
     <AnimatedCard>
-      {/* <CardLogo /> */}
-      <CardTitle>Sign In</CardTitle>
+      <CardTitle>{SIGNIN_CARD_TITLE}</CardTitle>
       <SignInForm />
     </AnimatedCard>
   );

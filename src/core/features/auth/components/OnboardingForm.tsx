@@ -29,6 +29,13 @@ import {
 } from '@/core/features/auth/schemas';
 import { useError } from '@/core/hooks/useError';
 import { useLocalStorage } from '@/core/hooks/useLocalStorage';
+import {
+  ONBOARDING_BUTTON_CREATE_ACCOUNT,
+  ONBOARDING_LABEL_CONFIRM_PASSWORD,
+  ONBOARDING_LABEL_NAME,
+  ONBOARDING_LABEL_PASSWORD,
+  ONBOARDING_TOAST_INVITE_MISSING,
+} from '@/core/translations/uk';
 import { cn } from '@/core/utils';
 
 type TOnboardingFormProps = {
@@ -60,7 +67,7 @@ const OnboardingForm = ({ userId }: TOnboardingFormProps) => {
       // Get invite code from the local storage
       const inviteCode = getItem<string>(INVITE_CODE_KEY);
       if (!inviteCode) {
-        toast('Could not retrieve invite code');
+        toast(ONBOARDING_TOAST_INVITE_MISSING);
         return;
       }
 
@@ -100,7 +107,7 @@ const OnboardingForm = ({ userId }: TOnboardingFormProps) => {
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Your name</FormLabel>
+                <FormLabel>{ONBOARDING_LABEL_NAME}</FormLabel>
                 <FormControl>
                   <FormInput {...field} />
                 </FormControl>
@@ -113,7 +120,7 @@ const OnboardingForm = ({ userId }: TOnboardingFormProps) => {
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Password</FormLabel>
+                <FormLabel>{ONBOARDING_LABEL_PASSWORD}</FormLabel>
                 <FormControlWithIcon>
                   <FormControlIcon>
                     <VisibilityToggle
@@ -134,7 +141,7 @@ const OnboardingForm = ({ userId }: TOnboardingFormProps) => {
             name="confirmPassword"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Confirm password</FormLabel>
+                <FormLabel>{ONBOARDING_LABEL_CONFIRM_PASSWORD}</FormLabel>
                 <FormControlWithIcon>
                   <FormControlIcon>
                     <VisibilityToggle
@@ -155,7 +162,7 @@ const OnboardingForm = ({ userId }: TOnboardingFormProps) => {
             className="auth-form_button"
             type="submit"
           >
-            Create an account
+            {ONBOARDING_BUTTON_CREATE_ACCOUNT}
           </Button>
           <FormLoading loadigIconClassName="-mt-14" isPending={isPending} />
         </form>
