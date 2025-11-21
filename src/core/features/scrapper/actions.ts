@@ -13,7 +13,7 @@ import {
   TABLE_CELLS_SELECTOR,
 } from '@/core/features/scrapper/constants';
 import {
-  CompoundData,
+  ScrapedData,
   HourStatus,
   WeekDay,
 } from '@/core/features/scrapper/types';
@@ -34,7 +34,9 @@ import {
   playwrightBrowser,
 } from '@/core/features/scrapper/lib/browser';
 
-export const getData = async (): Promise<ServerActionResult<CompoundData>> => {
+export const getScrapedData = async (): Promise<
+  ServerActionResult<ScrapedData>
+> => {
   logWithTime('getData: Start');
 
   let page: PageWithBrowser | null = null;

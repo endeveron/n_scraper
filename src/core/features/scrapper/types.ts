@@ -53,6 +53,6 @@ export interface WeekSchedule {
   timestamp: number;
 }
 
-export interface CompoundData extends BaseData {
+export interface ScrapedData extends BaseData {
   weekSchedule: WeekSchedule;
 }

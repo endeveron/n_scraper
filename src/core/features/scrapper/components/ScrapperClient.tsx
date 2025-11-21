@@ -6,50 +6,50 @@ import { toast } from 'sonner';
 import { Button } from '@/core/components/ui/Button';
 import Loading from '@/core/components/ui/Loading';
 import Taskbar from '@/core/components/ui/Taskbar';
-import { useSessionClient } from '@/core/features/auth/hooks/useSessionClient';
-import { getData } from '@/core/features/scrapper/actions';
 import AutoCounter from '@/core/features/scrapper/components/AutoCounter';
 import TimeDisplay from '@/core/features/scrapper/components/TimeDisplay';
 import WeeklySchedule from '@/core/features/scrapper/components/WeeklySchedule';
-import { CompoundData } from '@/core/features/scrapper/types';
+import { useStore } from '@/core/features/scrapper/store';
 import { cn } from '@/core/utils';
+import { shouldRefetch } from '@/core/features/scrapper/helpers';
 
 const ScrapperClient = () => {
-  const { status } = useSessionClient();
-  const [data, setData] = useState<CompoundData | null>(null);
-  const [reloadAllowed, setReloadAllowed] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const scrapedData = useStore((state) => state.scrapedData);
+  const scrapeData = useStore((state) => state.scrapeData);
+  const loading = useStore((state) => state.loading);
+  const updateAllowed = useStore((state) => state.updateAllowed);
+  const updatedAtTimestamp = useStore((state) => state.updatedAtTimestamp);
+
+  const [mounted, setMounted] = useState(false);
 
   // Prevent multiple calls
-  const fetchedRef = useRef(false);
+  const initializedRef = useRef(false);
+
+  // Wait for client-side mount
+  useEffect(() => {
+    (() => setMounted(true))();
+  }, []);
 
   const retrieveData = useCallback(async () => {
-    setLoading(true);
-    if (reloadAllowed) {
-      setReloadAllowed(false);
-    }
-    const res = await getData();
+    const res = await scrapeData();
     if (!res.success) {
       toast('Помилка отримання даних');
       if (res.error.message) {
         console.error(res.error.message);
       }
-      setReloadAllowed(true);
-    } else if (res.data) {
-      setData(res.data);
     }
-    setLoading(false);
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [scrapeData]);
 
   // Init data on mount
   useEffect(() => {
-    if (fetchedRef.current || status !== 'authenticated') return;
-    fetchedRef.current = true;
+    if (!mounted || initializedRef.current) return;
 
-    (() => retrieveData())();
-  }, [retrieveData, status]);
+    initializedRef.current = true;
+
+    if (shouldRefetch({ scrapedData, updatedAtTimestamp })) {
+      retrieveData();
+    }
+  }, [scrapedData, updatedAtTimestamp, retrieveData, mounted]);
 
   return (
     <div className="relative fade flex flex-col min-h-dvh px-4 pb-20">
@@ -63,8 +63,8 @@ const ScrapperClient = () => {
 
       <div
         className={cn(
-          'absolute inset-0 -z-10 flex-center opacity-0 select-none trans-o',
-          loading && 'opacity-100 z-10'
+          'absolute inset-0 -z-10 flex-center opacity-0 select-none bg-background/80 trans-o',
+          loading && 'opacity-100 z-50'
         )}
       >
         <div className="flex-center flex-col gap-6 -translate-y-8">
@@ -73,7 +73,7 @@ const ScrapperClient = () => {
         </div>
       </div>
 
-      {data ? (
+      {scrapedData ? (
         <div
           className={cn(
             'fade flex-1 flex-center flex-col gap-8 w-80 m-auto md:flex-row md:gap-12'
@@ -82,29 +82,32 @@ const ScrapperClient = () => {
           <div className="flex-center shrink-0 flex-col gap-2">
             <div className="mb-4 flex-center flex-col gap-2 w-full cursor-default">
               <div className="flex gap-3 text font-extrabold">
-                <span>{data.street}</span>
-                <span>{data.houseNumber}</span>
+                <span>{scrapedData.street}</span>
+                <span>{scrapedData.houseNumber}</span>
               </div>
               <div className="flex gap-6 text-sm text-muted font-semibold">
-                <span>{data.queueNumber}</span>
-                <span>{data.lastUpdate}</span>
+                <span>{scrapedData.queueNumber}</span>
+                <span>{scrapedData.lastUpdate}</span>
               </div>
             </div>
 
             <TimeDisplay
-              title={data.todayDate}
-              data={data.today}
+              title={scrapedData.todayDate}
+              data={scrapedData.today}
               className="text-accent"
             />
-            <TimeDisplay title={data.tomorrowDate} data={data.tomorrow} />
+            <TimeDisplay
+              title={scrapedData.tomorrowDate}
+              data={scrapedData.tomorrow}
+            />
           </div>
 
-          <WeeklySchedule data={data.weekSchedule} />
+          <WeeklySchedule data={scrapedData.weekSchedule} />
         </div>
-      ) : reloadAllowed ? (
+      ) : updateAllowed ? (
         <div className="fade my-8 flex-center">
           <Button onClick={retrieveData} variant="outline">
-            Отримати дані
+            Оновити
           </Button>
         </div>
       ) : null}

@@ -1,9 +1,12 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useState } from 'react';
 
 import { WeekSchedule } from '@/core/features/scrapper/types';
 import { cn } from '@/core/utils';
+
+const CURRENT_TIME_UPDATE_INTERVAL = 10 * 60 * 1000; // 10 min
+const CELL_HEIGHT = 24;
 
 interface PowerBlock {
   startHour: number;
@@ -17,9 +20,24 @@ interface WeeklyScheduleProps {
 }
 
 const WeeklySchedule = ({ data }: WeeklyScheduleProps) => {
-  const currentTime = useMemo(() => {
-    const now = new Date();
-    return now.getHours() + now.getMinutes() / 60;
+  // const currentTime = useMemo(() => {
+  //   const now = new Date();
+  //   return now.getHours() + now.getMinutes() / 60;
+  // }, []);
+  const [currentTime, setCurrentTime] = useState<number | null>(null);
+
+  // Update currentTime with interval
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      setCurrentTime(now.getHours() + now.getMinutes() / 60);
+    };
+
+    // Update immediately so we don't show null
+    updateTime();
+
+    const interval = setInterval(updateTime, CURRENT_TIME_UPDATE_INTERVAL);
+    return () => clearInterval(interval);
   }, []);
 
   const getDayAbbreviation = (dayNameEn: string): string => {
@@ -70,7 +88,13 @@ const WeeklySchedule = ({ data }: WeeklyScheduleProps) => {
           startHour: Math.floor(start / 2),
           startOffset: start % 2 ? 0.5 : 0,
           endHour: Math.floor((prev + 1) / 2),
-          endOffset: (prev + 1) % 2 ? 0.5 : 1,
+          /**
+           * endOffset:... : 0, - This ensures that when
+           * a power block ends at the start of an hour
+           * (like 14:00), it doesn't incorrectly extend
+           * an extra hou into the visualization (to 15:00)
+           */
+          endOffset: (prev + 1) % 2 ? 0.5 : 0,
         });
 
         // Start a new block
@@ -84,7 +108,7 @@ const WeeklySchedule = ({ data }: WeeklyScheduleProps) => {
         startHour: Math.floor(start / 2),
         startOffset: start % 2 ? 0.5 : 0,
         endHour: Math.floor((prev + 1) / 2),
-        endOffset: (prev + 1) % 2 ? 0.5 : 1,
+        endOffset: (prev + 1) % 2 ? 0.5 : 0,
       });
     }
 
@@ -100,10 +124,9 @@ const WeeklySchedule = ({ data }: WeeklyScheduleProps) => {
     return blocks;
   };
 
-  const currentHour = Math.floor(currentTime);
-  const cellHeight = 24;
+  if (!data || !currentTime) return null;
 
-  if (!data) return null;
+  const currentHour = Math.floor(currentTime);
 
   return (
     <div className="w-fit">
@@ -129,7 +152,7 @@ const WeeklySchedule = ({ data }: WeeklyScheduleProps) => {
           <div
             key={hour}
             className="flex relative"
-            style={{ height: `${cellHeight}px` }}
+            style={{ height: `${CELL_HEIGHT}px` }}
           >
             {/* Hour label */}
             <div className="w-8 flex items-start justify-center text-xs text-muted font-bold pr-1 shrink-0">
@@ -157,7 +180,7 @@ const WeeklySchedule = ({ data }: WeeklyScheduleProps) => {
                 {hour < 24 && (
                   <div
                     className="absolute inset-x-0 h-px bg-card/60 dark:bg-card/40"
-                    style={{ top: `${cellHeight / 2}px` }}
+                    style={{ top: `${CELL_HEIGHT / 2}px` }}
                   />
                 )}
               </div>
@@ -168,7 +191,7 @@ const WeeklySchedule = ({ data }: WeeklyScheduleProps) => {
               <div
                 className="absolute w-70 left-8 right-2 h-0.5 bg-accent z-10"
                 style={{
-                  top: `${(currentTime - currentHour) * cellHeight}px`,
+                  top: `${(currentTime - currentHour) * CELL_HEIGHT}px`,
                 }}
               />
             )}
@@ -190,9 +213,10 @@ const WeeklySchedule = ({ data }: WeeklyScheduleProps) => {
             >
               {blocks.map((block, blockIdx) => {
                 const topPos =
-                  block.startHour * cellHeight + block.startOffset * cellHeight;
+                  block.startHour * CELL_HEIGHT +
+                  block.startOffset * CELL_HEIGHT;
                 const end = Math.min(block.endHour + block.endOffset, 24);
-                const bottomPos = end * cellHeight;
+                const bottomPos = end * CELL_HEIGHT;
 
                 return (
                   <div

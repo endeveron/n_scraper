@@ -8,27 +8,55 @@ import {
   STREET_INPUT_SELECTOR,
 } from '@/core/features/scrapper/constants';
 import { PageWithBrowser } from '@/core/features/scrapper/lib/browser';
-import { HourStatus, PowerStatus } from '@/core/features/scrapper/types';
+import {
+  HourStatus,
+  PowerStatus,
+  ScrapedData,
+} from '@/core/features/scrapper/types';
 
-// Close modal if present
-// export async function closeModalIfPresent(
-//   page: PageWithBrowser
-// ): Promise<void> {
-//   try {
-//     const modalCloseButton = page.locator(MODAL_CLOSE_BTN_SELECTOR);
-//     await modalCloseButton.waitFor({ state: 'visible', timeout: 3000 });
-//     await modalCloseButton.click();
-//     logWithTime('closeModalIfPresent: Close button click');
-//     await page.locator(MODAL_HIDDEN_SELECTOR).waitFor({
-//       state: 'attached',
-//       timeout: 3000,
-//     });
-//     await page.waitForTimeout(500);
-//   } catch {
-//     // Modal not present
-//     logWithTime('closeModalIfPresent: Modal not present');
-//   }
-// }
+export function shouldRefetch({
+  scrapedData,
+  updatedAtTimestamp,
+  now = new Date(),
+  startHour = 21,
+  startMinute = 0,
+  endHour = 23,
+  endMinute = 30,
+  staleMinutes = 5,
+}: {
+  scrapedData: unknown | null;
+  updatedAtTimestamp: number | null;
+  now?: Date;
+  startHour?: number;
+  startMinute?: number;
+  endHour?: number;
+  endMinute?: number;
+  staleMinutes?: number;
+}) {
+  // 0. If no data → always fetch immediately (regardless of time)
+  if (!scrapedData) return true;
+
+  const lastUpdated = updatedAtTimestamp ?? 0;
+
+  // 1. Check if current time is inside allowed window
+  const hour = now.getHours();
+  const minute = now.getMinutes();
+  const currentMinutes = hour * 60 + minute;
+
+  const start = startHour * 60 + startMinute;
+  const end = endHour * 60 + endMinute;
+
+  const isInTimeRange = currentMinutes >= start && currentMinutes <= end;
+
+  if (!isInTimeRange) return false;
+
+  // 2. Check stale interval
+  const STALE_MS = staleMinutes * 60 * 1000;
+  const isStale = Date.now() - lastUpdated > STALE_MS;
+
+  return isStale;
+}
+
 export async function nukeAllModals(page: PageWithBrowser) {
   await page.evaluate(() => {
     const selectors = [
@@ -363,4 +391,85 @@ export async function logPossibleBlockers(page: PageWithBrowser) {
   } catch (err) {
     console.log('[DEBUG] logPossibleBlockers failed:', err);
   }
+}
+
+function parseTimeInterval(interval: string): { start: number; end: number } {
+  const [startStr, endStr] = interval.split(' - ').map((s) => s.trim());
+
+  const parseTime = (time: string): number => {
+    const [hours, minutes] = time.split(':').map(Number);
+    return hours + minutes / 60;
+  };
+
+  const start = parseTime(startStr);
+  const end = endStr === '24:00' ? 24 : parseTime(endStr);
+
+  return { start, end };
+}
+
+function generateHoursArray(intervals: string[]): PowerStatus[] {
+  const hours: PowerStatus[] = Array(24).fill('off');
+
+  intervals.forEach((interval) => {
+    const { start, end } = parseTimeInterval(interval);
+
+    const startHour = Math.floor(start);
+    const endHour = Math.floor(end);
+    const startMinutes = (start % 1) * 60;
+    const endMinutes = (end % 1) * 60;
+
+    // Mark hours as 'on' from start to end (exclusive)
+    for (let hour = startHour; hour < endHour; hour++) {
+      hours[hour] = 'on';
+    }
+
+    // Handle partial start hour (e.g., 20:30 - 24:00 starts at 20:30)
+    if (startMinutes > 0 && startHour < 24) {
+      if (startMinutes > 30) {
+        // Power starts in second half, so first half is off
+        hours[startHour] = 'off-first-half';
+      } else {
+        // Power starts in first half (before :30), entire hour might be on
+        // But we need to check: does it turn on exactly at :30?
+        if (startMinutes === 30) {
+          hours[startHour] = 'off-first-half';
+        } else {
+          // Starts between :00 and :30 - keep as 'on' (set above)
+        }
+      }
+    }
+
+    // Handle partial end hour (e.g., 00:00 - 03:30 ends at 03:30)
+    if (endMinutes > 0 && endHour < 24) {
+      if (endMinutes <= 30) {
+        // Power ends at or before :30, so second half is off
+        hours[endHour] = 'off-second-half';
+      } else {
+        // Power ends after :30, entire hour is on
+        hours[endHour] = 'on';
+      }
+    }
+  });
+
+  return hours;
+}
+
+export function updateTodaySchedule(scrapedData: ScrapedData): ScrapedData {
+  const updatedSchedule = scrapedData.weekSchedule.schedule.map((day) => {
+    if (day.isToday) {
+      return {
+        ...day,
+        hours: generateHoursArray(scrapedData.today),
+      };
+    }
+    return day;
+  });
+
+  return {
+    ...scrapedData,
+    weekSchedule: {
+      ...scrapedData.weekSchedule,
+      schedule: updatedSchedule,
+    },
+  };
 }
