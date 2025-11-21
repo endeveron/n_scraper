@@ -7,10 +7,11 @@ type Store = BaseSlice & {
   reset: () => void;
 };
 
-const initialState = {
-  data: null,
-  loading: false,
-  updateAllowed: false,
+export const initialState = {
+  scrapedData: null,
+  scraping: false,
+  updatedAtTimestamp: null,
+  updatedWithError: false,
 };
 
 export const useStore = create<Store>()(

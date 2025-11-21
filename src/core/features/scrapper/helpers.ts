@@ -12,6 +12,7 @@ import {
   HourStatus,
   PowerStatus,
   ScrapedData,
+  WeekDay,
 } from '@/core/features/scrapper/types';
 
 export function shouldRefetch({
@@ -308,91 +309,6 @@ export function mapDayNameToEnglish(ukrainianName: string): string {
   return dayMap[ukrainianName] || ukrainianName;
 }
 
-export function logWithTime(msg: string): void {
-  const now = new Date();
-  const hours = now.getHours().toString().padStart(2, '0');
-  const minutes = now.getMinutes().toString().padStart(2, '0');
-  const seconds = now.getSeconds().toString().padStart(2, '0');
-  const millis = now.getMilliseconds().toString().padStart(3, '0');
-
-  console.log(`${msg} [${hours}:${minutes}:${seconds}.${millis}]`);
-}
-
-export function prettyLogError(err: Error) {
-  const timestamp = new Date().toISOString();
-  const name = err.name || 'Error';
-  const message = err.message || '';
-  const stack = err.stack || '';
-  const callLog = message.includes('Call log:')
-    ? message.split('Call log:')[1]
-    : '';
-
-  console.log(`\n[${timestamp}] ${name}: ${message.split('\n')[0]}\n`);
-
-  if (callLog) {
-    const simplifiedLog = callLog
-      .replace(/(\d+ × retrying click action)/g, '  - $1')
-      .replace(/<div.*?>/g, '<div...>')
-      .split('\n')
-      .map((line: string) => line.trim())
-      .filter((line: string) => line)
-      .join('\n');
-
-    console.log('Call log summary:\n', simplifiedLog);
-  }
-
-  if (stack) {
-    const shortStack = stack.split('\n').slice(0, 5).join('\n');
-    console.log('\nStack trace (shortened):\n', shortStack, '...');
-  }
-}
-
-export async function logPossibleBlockers(page: PageWithBrowser) {
-  try {
-    console.log('[DEBUG] Checking for blockers...');
-
-    // 1. Check for ANY modal-like elements
-    const modalSelectors = [
-      '.modal.is-open',
-      '.modal-questionnaire',
-      '[id^="modal-"].is-open',
-      '.micromodal-slide.is-open',
-      '.modal__overlay',
-    ];
-
-    for (const sel of modalSelectors) {
-      const els = await page.locator(sel).all();
-      for (const el of els) {
-        if (await el.isVisible()) {
-          const box = await el.boundingBox();
-          const z = await el.evaluate((node) => getComputedStyle(node).zIndex);
-
-          console.log(`[DEBUG] Visible modal-like element: ${sel}`);
-          console.log(`[DEBUG] z-index: ${z}, box:`, box);
-        }
-      }
-    }
-
-    // 2. Log high z-index elements (potential overlays)
-    const blockers = page.locator('*');
-    const count = await blockers.count();
-    for (let i = 0; i < count; i++) {
-      const el = blockers.nth(i);
-      const z = await el.evaluate((el) => +getComputedStyle(el).zIndex || 0);
-
-      if (z > 1000) {
-        const box = await el.boundingBox();
-        console.log(`[DEBUG] High z-index element: ${z}`, { box });
-
-        const classes = await el.evaluate((el) => el.className);
-        console.log(`[DEBUG] Classes:`, classes);
-      }
-    }
-  } catch (err) {
-    console.log('[DEBUG] logPossibleBlockers failed:', err);
-  }
-}
-
 function parseTimeInterval(interval: string): { start: number; end: number } {
   const [startStr, endStr] = interval.split(' - ').map((s) => s.trim());
 
@@ -454,16 +370,46 @@ function generateHoursArray(intervals: string[]): PowerStatus[] {
   return hours;
 }
 
-export function updateTodaySchedule(scrapedData: ScrapedData): ScrapedData {
-  const updatedSchedule = scrapedData.weekSchedule.schedule.map((day) => {
-    if (day.isToday) {
-      return {
-        ...day,
-        hours: generateHoursArray(scrapedData.today),
-      };
+function hasValidTimeIntervalsData(data: string[]): boolean {
+  return data.length > 0 && data[0] !== '0' && data[0] !== '1';
+}
+
+function getTodayIndex(schedule: WeekDay[]): number {
+  return schedule.findIndex((day) => day.isToday);
+}
+
+function getTomorrowIndex(todayIndex: number): number {
+  const DAYS_IN_WEEK = 7;
+  return (todayIndex + 1) % DAYS_IN_WEEK;
+}
+
+export function updateSchedule(scrapedData: ScrapedData): ScrapedData {
+  const todayIndex = getTodayIndex(scrapedData.weekSchedule.schedule);
+  const tomorrowIndex = getTomorrowIndex(todayIndex);
+  const hasTodayData = hasValidTimeIntervalsData(scrapedData.today);
+  const hasTomorrowData = hasValidTimeIntervalsData(scrapedData.tomorrow);
+
+  const updatedSchedule = scrapedData.weekSchedule.schedule.map(
+    (day, index) => {
+      // Update today's schedule if valid data exists
+      if (index === todayIndex && hasTodayData) {
+        return {
+          ...day,
+          hours: generateHoursArray(scrapedData.today),
+        };
+      }
+
+      // Update tomorrow's schedule if valid data exists
+      if (index === tomorrowIndex && hasTomorrowData) {
+        return {
+          ...day,
+          hours: generateHoursArray(scrapedData.tomorrow),
+        };
+      }
+
+      return day;
     }
-    return day;
-  });
+  );
 
   return {
     ...scrapedData,
@@ -472,4 +418,89 @@ export function updateTodaySchedule(scrapedData: ScrapedData): ScrapedData {
       schedule: updatedSchedule,
     },
   };
+}
+
+export function logWithTime(msg: string): void {
+  const now = new Date();
+  const hours = now.getHours().toString().padStart(2, '0');
+  const minutes = now.getMinutes().toString().padStart(2, '0');
+  const seconds = now.getSeconds().toString().padStart(2, '0');
+  const millis = now.getMilliseconds().toString().padStart(3, '0');
+
+  console.log(`${msg} [${hours}:${minutes}:${seconds}.${millis}]`);
+}
+
+export function prettyLogError(err: Error) {
+  const timestamp = new Date().toISOString();
+  const name = err.name || 'Error';
+  const message = err.message || '';
+  const stack = err.stack || '';
+  const callLog = message.includes('Call log:')
+    ? message.split('Call log:')[1]
+    : '';
+
+  console.log(`\n[${timestamp}] ${name}: ${message.split('\n')[0]}\n`);
+
+  if (callLog) {
+    const simplifiedLog = callLog
+      .replace(/(\d+ × retrying click action)/g, '  - $1')
+      .replace(/<div.*?>/g, '<div...>')
+      .split('\n')
+      .map((line: string) => line.trim())
+      .filter((line: string) => line)
+      .join('\n');
+
+    console.log('Call log summary:\n', simplifiedLog);
+  }
+
+  if (stack) {
+    const shortStack = stack.split('\n').slice(0, 5).join('\n');
+    console.log('\nStack trace (shortened):\n', shortStack, '...');
+  }
+}
+
+export async function logPossibleBlockers(page: PageWithBrowser) {
+  try {
+    // console.log('[DEBUG] Checking for blockers...');
+
+    // 1. Check for ANY modal-like elements
+    const modalSelectors = [
+      '.modal.is-open',
+      '.modal-questionnaire',
+      '[id^="modal-"].is-open',
+      '.micromodal-slide.is-open',
+      '.modal__overlay',
+    ];
+
+    for (const sel of modalSelectors) {
+      const els = await page.locator(sel).all();
+      for (const el of els) {
+        if (await el.isVisible()) {
+          const box = await el.boundingBox();
+          const z = await el.evaluate((node) => getComputedStyle(node).zIndex);
+
+          console.log(`[DEBUG] Visible modal-like element: ${sel}`);
+          console.log(`[DEBUG] z-index: ${z}, box:`, box);
+        }
+      }
+    }
+
+    // 2. Log high z-index elements (potential overlays)
+    const blockers = page.locator('*');
+    const count = await blockers.count();
+    for (let i = 0; i < count; i++) {
+      const el = blockers.nth(i);
+      const z = await el.evaluate((el) => +getComputedStyle(el).zIndex || 0);
+
+      if (z > 1000) {
+        const box = await el.boundingBox();
+        console.log(`[DEBUG] High z-index element: ${z}`, { box });
+
+        const classes = await el.evaluate((el) => el.className);
+        console.log(`[DEBUG] Classes:`, classes);
+      }
+    }
+  } catch (err) {
+    console.log('[DEBUG] logPossibleBlockers failed:', err);
+  }
 }

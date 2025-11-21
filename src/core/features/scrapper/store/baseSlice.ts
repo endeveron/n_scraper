@@ -1,15 +1,16 @@
 import { StateCreator } from 'zustand';
 
 import { getScrapedData } from '@/core/features/scrapper/actions';
+import { updateSchedule } from '@/core/features/scrapper/helpers';
 import { ScrapedData } from '@/core/features/scrapper/types';
 import { ServerActionResult } from '@/core/types';
-import { updateTodaySchedule } from '@/core/features/scrapper/helpers';
+import { initialState } from '@/core/features/scrapper/store';
 
 export interface BaseSlice {
   scrapedData: ScrapedData | null;
-  loading: boolean;
-  updateAllowed: boolean;
+  scraping: boolean;
   updatedAtTimestamp: number | null;
+  updatedWithError: boolean;
   scrapeData: () => Promise<ServerActionResult<ScrapedData>>;
 }
 
@@ -17,29 +18,26 @@ export const baseSlice: StateCreator<BaseSlice, [], [], BaseSlice> = (
   set,
   get
 ) => ({
-  scrapedData: null,
-  loading: false,
-  updateAllowed: false,
-  updatedAtTimestamp: null,
+  ...initialState,
 
   scrapeData: async () => {
-    set({ loading: true });
+    set({ scraping: true });
 
-    if (get().updateAllowed) {
-      set({ updateAllowed: false });
+    if (get().updatedWithError) {
+      set({ updatedWithError: false });
     }
 
     const res = await getScrapedData();
     if (res.success && res.data) {
       set({
-        scrapedData: updateTodaySchedule(res.data),
+        scrapedData: updateSchedule(res.data),
         updatedAtTimestamp: Date.now(),
       });
     } else {
-      set({ updateAllowed: true });
+      set({ updatedWithError: true });
     }
 
-    set({ loading: false });
+    set({ scraping: false });
     return res;
   },
 });

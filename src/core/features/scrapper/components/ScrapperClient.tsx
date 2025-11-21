@@ -9,15 +9,16 @@ import Taskbar from '@/core/components/ui/Taskbar';
 import AutoCounter from '@/core/features/scrapper/components/AutoCounter';
 import TimeDisplay from '@/core/features/scrapper/components/TimeDisplay';
 import WeeklySchedule from '@/core/features/scrapper/components/WeeklySchedule';
+import { shouldRefetch } from '@/core/features/scrapper/helpers';
 import { useStore } from '@/core/features/scrapper/store';
 import { cn } from '@/core/utils';
-import { shouldRefetch } from '@/core/features/scrapper/helpers';
+import { RefreshIcon } from '@/core/components/icons/RefreshIcon';
 
 const ScrapperClient = () => {
   const scrapedData = useStore((state) => state.scrapedData);
   const scrapeData = useStore((state) => state.scrapeData);
-  const loading = useStore((state) => state.loading);
-  const updateAllowed = useStore((state) => state.updateAllowed);
+  const scraping = useStore((state) => state.scraping);
+  const updatedWithError = useStore((state) => state.updatedWithError);
   const updatedAtTimestamp = useStore((state) => state.updatedAtTimestamp);
 
   const [mounted, setMounted] = useState(false);
@@ -58,18 +59,23 @@ const ScrapperClient = () => {
           <div className="text-2xl text-accent font-black cursor-default"></div>
         </div>
 
-        <Taskbar loading={loading} />
+        <Taskbar loading={scraping}>
+          <RefreshIcon
+            onClick={retrieveData}
+            className={cn('icon--action trans-o', scraping && 'opacity-40')}
+          />
+        </Taskbar>
       </div>
 
       <div
         className={cn(
           'absolute inset-0 -z-10 flex-center opacity-0 select-none bg-background/80 trans-o',
-          loading && 'opacity-100 z-50'
+          scraping && 'opacity-100 z-50'
         )}
       >
         <div className="flex-center flex-col gap-6 -translate-y-8">
           <Loading />
-          <AutoCounter loading={loading} />
+          <AutoCounter loading={scraping} />
         </div>
       </div>
 
@@ -99,12 +105,13 @@ const ScrapperClient = () => {
             <TimeDisplay
               title={scrapedData.tomorrowDate}
               data={scrapedData.tomorrow}
+              className="text-muted"
             />
           </div>
 
           <WeeklySchedule data={scrapedData.weekSchedule} />
         </div>
-      ) : updateAllowed ? (
+      ) : updatedWithError ? (
         <div className="fade my-8 flex-center">
           <Button onClick={retrieveData} variant="outline">
             Оновити
