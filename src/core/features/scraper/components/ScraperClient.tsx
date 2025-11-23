@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import { CollapseIcon } from '@/core/components/icons/CollapseIcon';
@@ -35,6 +35,19 @@ const ScraperClient = () => {
   // Prevent multiple calls
   const initializedRef = useRef(false);
 
+  const lastUpdateRaw = scrapedData?.lastUpdate;
+  const lastUpdate = useMemo(() => {
+    if (!lastUpdateRaw) return null;
+
+    const arr = lastUpdateRaw.split(' ');
+    if (!arr.length || arr.length !== 2) return null;
+
+    return {
+      date: arr[0],
+      time: arr[1],
+    };
+  }, [lastUpdateRaw]);
+
   // Wait for client-side mount
   useEffect(() => {
     (() => setMounted(true))();
@@ -62,7 +75,7 @@ const ScraperClient = () => {
   }, [scrapedData, updatedAtTimestamp, retrieveData, mounted]);
 
   return (
-    <div className="relative fade flex flex-col min-h-dvh px-4 pb-12">
+    <div className="fade relative flex-col flex-center min-h-dvh px-4 pb-12">
       <div
         className={cn(
           'h-20 sticky top-0 flex items-center gap-4',
@@ -70,9 +83,10 @@ const ScraperClient = () => {
         )}
       >
         <div className="flex flex-1 items-center gap-4">
-          {collapsed && scrapedData?.lastUpdate ? (
-            <div className="text-sm text-muted font-semibold">
-              {scrapedData.lastUpdate}
+          {collapsed && lastUpdate ? (
+            <div className="flex gap-4 text-sm text-muted font-bold tracking-wider cursor-default">
+              <span>{lastUpdate.date}</span>
+              <span>{lastUpdate.time}</span>
             </div>
           ) : null}
         </div>
@@ -102,48 +116,55 @@ const ScraperClient = () => {
         </div>
       </div>
 
-      {scrapedData ? (
-        <div
-          className={cn(
-            'fade flex-1 flex-center flex-col gap-8 w-80 m-auto md:flex-row md:gap-16'
-          )}
-        >
-          {!collapsed ? (
-            <div className="flex-center shrink-0 flex-col gap-2">
-              <div className="mb-4 flex-center flex-col gap-2 w-full cursor-default">
-                <div className="text-center font-extrabold">
-                  {scrapedData.street}
-                  <span className="ml-3">{scrapedData.houseNumber}</span>
+      <div className="flex-1 flex-center">
+        {scrapedData ? (
+          <div
+            className={cn(
+              'fade flex-1 flex-center flex-col gap-8 w-80 md:flex-row md:gap-16'
+            )}
+          >
+            {!collapsed ? (
+              <div className="flex-center shrink-0 flex-col gap-2">
+                <div className="mb-4 flex-center flex-col gap-2 w-full cursor-default">
+                  <div className="text-center font-extrabold">
+                    {scrapedData.street}
+                    <span className="ml-3">{scrapedData.houseNumber}</span>
+                  </div>
+
+                  <div className="flex gap-8 text-sm text-muted font-semibold">
+                    <span>{scrapedData.queueNumber}</span>
+                    {lastUpdate ? (
+                      <div className="flex gap-4">
+                        <span>{lastUpdate.date}</span>
+                        <span>{lastUpdate.time}</span>
+                      </div>
+                    ) : null}
+                  </div>
                 </div>
 
-                <div className="flex gap-6 text-sm text-muted font-semibold">
-                  <span>{scrapedData.queueNumber}</span>
-                  <span>{scrapedData.lastUpdate}</span>
-                </div>
+                <TimeDisplay
+                  title={scrapedData.todayDate}
+                  data={scrapedData.today}
+                  className="text-accent"
+                />
+                <TimeDisplay
+                  title={scrapedData.tomorrowDate}
+                  data={scrapedData.tomorrow}
+                  className="text-muted"
+                />
               </div>
+            ) : null}
 
-              <TimeDisplay
-                title={scrapedData.todayDate}
-                data={scrapedData.today}
-                className="text-accent"
-              />
-              <TimeDisplay
-                title={scrapedData.tomorrowDate}
-                data={scrapedData.tomorrow}
-                className="text-muted"
-              />
-            </div>
-          ) : null}
-
-          <WeeklySchedule data={scrapedData.weekSchedule} />
-        </div>
-      ) : updatedWithError ? (
-        <div className="fade my-8 flex-center">
-          <Button onClick={retrieveData} variant="outline">
-            {UPDATE}
-          </Button>
-        </div>
-      ) : null}
+            <WeeklySchedule data={scrapedData.weekSchedule} />
+          </div>
+        ) : updatedWithError ? (
+          <div className="fade my-8 flex-center">
+            <Button onClick={retrieveData} variant="outline">
+              {UPDATE}
+            </Button>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 };

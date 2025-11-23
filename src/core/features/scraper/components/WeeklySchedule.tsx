@@ -131,7 +131,7 @@ const WeeklySchedule = ({ data }: WeeklyScheduleProps) => {
   const currentHour = Math.floor(currentTime);
 
   return (
-    <div className="w-fit">
+    <div className="w-fit cursor-default">
       {/* Header Row */}
       <div className="flex mb-0">
         <div className="w-8 shrink-0" />

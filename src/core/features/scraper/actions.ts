@@ -57,6 +57,8 @@ export const getScrapedData = async (): Promise<
       };
     }
 
+    logWithTime('getScrapedData: Page initialized');
+
     const browserPage = page;
     let scrapingSuccess = false;
     let scrapedData: ScrapedData | null = null;
@@ -160,8 +162,6 @@ export const getScrapedData = async (): Promise<
         logWithTime('Tomorrow tab switch timeout, retrying...');
         continue;
       }
-
-      logWithTime('getScrapedData: Switched to tomorrow tab');
 
       // No time limit needed - it's fast (198ms)
       const tomorrowTab = page.locator(DATE_TAB_ACTIVE_SELECTOR);
@@ -267,6 +267,8 @@ export const getScrapedData = async (): Promise<
         error: { message: 'Data scraping failed after 3 attempts' },
       };
     }
+
+    logWithTime('getScrapedData: All required ata retrieved');
 
     await page.close({ runBeforeUnload: false });
     logWithTime('getScrapedData: Page closed');
