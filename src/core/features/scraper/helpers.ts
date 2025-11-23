@@ -16,6 +16,22 @@ import {
   WeekDay,
 } from '@/core/features/scraper/types';
 
+/**
+ * Wraps an async operation with a time limit.
+ * Returns true if operation completed within limit, false if exceeded.
+ */
+export async function withTimeLimit<T>(
+  fn: () => Promise<T>,
+  timeLimit: number
+): Promise<boolean> {
+  const timeout = new Promise((resolve) =>
+    setTimeout(() => resolve(false), timeLimit)
+  );
+  const operation = fn().then(() => true);
+
+  return Promise.race([operation, timeout]) as Promise<boolean>;
+}
+
 export function shouldRefetch({
   scrapedData,
   updatedAtTimestamp,
@@ -101,7 +117,7 @@ export async function fillAddressForm(
   page: PageWithBrowser,
   street: string,
   houseNumber: string
-): Promise<void> {
+): Promise<boolean> {
   const form = page.locator(FORM_SELECTOR);
 
   /** A modal__overlay (z-index 1001–10001) keeps appearing exactly during these actions:
@@ -111,78 +127,95 @@ export async function fillAddressForm(
       - Before clicking house number
    */
 
-  // Fill street field
-  const streetInput = form.locator(STREET_INPUT_SELECTOR);
-  await streetInput.fill(street);
-  await streetInput.dispatchEvent('input');
-  logWithTime('fillAddressForm: Street input visible');
+  try {
+    // Fill street field
+    const streetInput = form.locator(STREET_INPUT_SELECTOR);
+    await streetInput.fill(street);
+    await streetInput.dispatchEvent('input');
+    logWithTime('fillAddressForm: Street input visible');
 
-  // await logPossibleBlockers(page);
-  // Overlay is present
-  await nukeAllModals(page);
+    // await logPossibleBlockers(page);
+    // Overlay is present
+    await nukeAllModals(page);
 
-  // Wait for autocomplete dropdown
-  await page.locator(STREET_AUTOCOMPLETE_LIST_SELECTOR).waitFor({
-    state: 'visible',
-    timeout: 15000,
-  });
-  logWithTime('fillAddressForm: Dropdown shown');
+    // Wait for autocomplete dropdown with time limit (2000ms) (current: 23ms)
+    const streetAutocompleteShown = await withTimeLimit(async () => {
+      await page.locator(STREET_AUTOCOMPLETE_LIST_SELECTOR).waitFor({
+        state: 'visible',
+        timeout: 2000,
+      });
+    }, 2000);
 
-  // await logPossibleBlockers(page);
-  // Overlay is present and intercepts clicks
-  await nukeAllModals(page);
+    if (!streetAutocompleteShown) {
+      logWithTime('fillAddressForm ERROR: Street autocomplete timeout');
+      return false;
+    }
+    logWithTime('fillAddressForm: Dropdown shown');
 
-  // Click the matching item
-  await page
-    .locator(STREET_AUTOCOMPLETE_ITEM_SELECTOR)
-    .filter({ hasText: street })
-    .first()
-    .click();
-  logWithTime('fillAddressForm: Click to matched street item');
+    // await logPossibleBlockers(page);
+    // Overlay is present and intercepts clicks
+    await nukeAllModals(page);
 
-  // Wait for house_num to be enabled
-  await page.waitForFunction(
-    (selector) => {
-      const input = document.querySelector(selector) as HTMLInputElement;
-      return input && !input.disabled;
-    },
-    HOUSE_NUM_INPUT_SELECTOR,
-    { timeout: 15000 }
-  );
-  logWithTime('fillAddressForm: House number input enabled');
+    // Click the matching item
+    await page
+      .locator(STREET_AUTOCOMPLETE_ITEM_SELECTOR)
+      .filter({ hasText: street })
+      .first()
+      .click();
+    logWithTime('fillAddressForm: Click to matched street item');
 
-  // Fill house number field
-  // await page.locator(HOUSE_NUM_INPUT_SELECTOR).fill(houseNumber);
-  const houseNumInput = page.locator(HOUSE_NUM_INPUT_SELECTOR);
-  await houseNumInput.fill(houseNumber);
-  await houseNumInput.dispatchEvent('input');
-  logWithTime('fillAddressForm: House number input filled');
+    // Wait for house_num to be enabled with time limit (2000ms) (current: 131ms)
+    await page.waitForFunction(
+      (selector) => {
+        const input = document.querySelector(selector) as HTMLInputElement;
+        return input && !input.disabled;
+      },
+      HOUSE_NUM_INPUT_SELECTOR,
+      { timeout: 2000 }
+    );
+    logWithTime('fillAddressForm: House number input enabled');
 
-  // await logPossibleBlockers(page);
-  // Overlay is present
-  await nukeAllModals(page);
+    // Fill house number field
+    const houseNumInput = page.locator(HOUSE_NUM_INPUT_SELECTOR);
+    await houseNumInput.fill(houseNumber);
+    await houseNumInput.dispatchEvent('input');
+    logWithTime('fillAddressForm: House number input filled');
 
-  // Wait for house autocomplete and click
-  await page.locator(HOUSE_NUM_AUTOCOMPLETE_LIST_SELECTOR).waitFor({
-    state: 'visible',
-    timeout: 15000,
-  });
-  logWithTime('fillAddressForm: House number autocomplete shown');
+    // await logPossibleBlockers(page);
+    // Overlay is present
+    await nukeAllModals(page);
 
-  // await logPossibleBlockers(page);
-  // Overlay is present and intercepts clicks
-  await nukeAllModals(page);
+    // Wait for house autocomplete with time limit (2000ms) (current: 54ms)
+    const houseAutocompleteShown = await withTimeLimit(async () => {
+      await page.locator(HOUSE_NUM_AUTOCOMPLETE_LIST_SELECTOR).waitFor({
+        state: 'visible',
+        timeout: 2000,
+      });
+    }, 2000);
+    if (!houseAutocompleteShown) {
+      logWithTime('fillAddressForm ERROR: House autocomplete timeout');
+    }
+    logWithTime('fillAddressForm: House number autocomplete shown');
 
-  // Click the matching item
-  await page
-    .locator(HOUSE_NUM_AUTOCOMPLETE_ITEM_SELECTOR)
-    .filter({ hasText: houseNumber })
-    .first()
-    .click();
-  logWithTime('fillAddressForm: Click to matched house num item');
+    // await logPossibleBlockers(page);
+    // Overlay is present and intercepts clicks
+    await nukeAllModals(page);
 
-  // Wait for results to load
-  await page.waitForTimeout(1000);
+    // Click the matching item
+    await page
+      .locator(HOUSE_NUM_AUTOCOMPLETE_ITEM_SELECTOR)
+      .filter({ hasText: houseNumber })
+      .first()
+      .click();
+    logWithTime('fillAddressForm: Click to matched house num item');
+
+    // Wait for results to load
+    await page.waitForTimeout(1000);
+
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 // Get time slot label
